@@ -1,0 +1,5 @@
+hcl_domain_webform.restrict_webform_domain_access:
+  title: Restrict webform domain access
+  route_name: hcl_domain_webform.restrict_webform_domain_access
+  weight: 10
+  parent: domain.admin

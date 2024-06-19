@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function hcl_domain_webform_uninstall() {
+  $entity_manager = \Drupal::entityTypeManager();
+  $entity_type = 'webform_submission'; 
+  $field_name = 'domain_id'; 
+  // Load the field storage definition.
+  $field_storage = $entity_manager->getStorage('field_storage_config')->load($entity_type . '.' . $field_name);
+  if ($field_storage) {
+    $field_storage->delete();
+  }
+  \Drupal::entityDefinitionUpdateManager()->getChangeSummary();
+  $webforms = $entity_manager->getStorage('webform')->loadMultiple();
+  $config_factory = \Drupal::configFactory();
+  foreach ($webforms as $name => $webform) {
+    $webform_config = $config_factory->getEditable("webform.webform.{$name}");
+    if ($webform_config->get('domain_ids') !== NULL) {
+      $webform_config->clear('domain_ids');
+      $webform_config->clear('third_party_settings.hcl_domain_webform')->save();
+    }
+  }
+  
+}

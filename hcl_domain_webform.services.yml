@@ -1,0 +1,4 @@
+services:
+  hcl_domain_webform.domain_webform:
+    class: Drupal\hcl_domain_webform\DomainWebformService
+    arguments: ['@entity_type.manager', '@logger.factory']

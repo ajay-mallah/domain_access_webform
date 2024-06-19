@@ -1,0 +1,277 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for hcl_domain_webform module.
+ */
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Database\Query\AlterableInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\domain\DomainInterface;
+use Drupal\domain\Entity\Domain;
+use Drupal\webform\WebformInterface;
+use Drupal\webform\WebformSubmissionInterface;
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function hcl_domain_webform_entity_type_alter(array &$entity_types) {
+  if ($entity_types['webform']->getListBuilderClass() == 'Drupal\webform\WebformEntityListBuilder') {
+    $config_export = $entity_types['webform']->get('config_export');
+
+    $extra_keys = [
+      'domain_ids',
+    ];
+    // Merge the existing config export keys with the new ones.
+    $entity_types['webform']->set('config_export', array_merge($config_export, $extra_keys));
+    $entity_types['webform']->setListBuilderClass('Drupal\hcl_domain_webform\HCLWebformEntityListBuilder');
+    \Drupal::logger('hcl_domain_webform')->notice('new webform builder is being used', [
+      'BuilderClass' => $entity_types['webform']->getListBuilderClass(),
+    ]);
+  }
+  else {
+    \Drupal::logger('hcl_domain_webform')->alert('Unable to overwrite the listbuilder class, already overwritten?', [
+      'BuilderClass' => $entity_types['webform']->getListBuilderClass(),
+    ]);
+  }
+
+  if ($entity_types['webform_submission']->getListBuilderClass() == 'Drupal\webform\WebformSubmissionListBuilder') {
+    $entity_types['webform_submission']->setListBuilderClass('Drupal\hcl_domain_webform\DomainWebformSubmissionListBuilder');
+  }
+  else {
+    \Drupal::logger('domain_webform')->alert('Unable to overwrite the listbuilder class, already overwritten?', [
+      'BuilderClass' => $entity_types['webform_submission']->getListBuilderClass(),
+    ]);
+  }
+
+  if ($entity_types['webform_submission']->getStorageClass() == 'Drupal\webform\WebformSubmissionStorage') {
+    $entity_types['webform_submission']->setStorageClass('Drupal\hcl_domain_webform\DomainWebformSubmissionStorage');
+  }
+  else {
+    \Drupal::logger('domain_webform')->alert('Unable to overwrite the storage class, already overwritten?', [
+      'StorageClass' => $entity_types['webform_submission']->getStorageClass(),
+    ]);
+  }
+}
+
+/**
+ * Custom submit handler.
+ */
+function hcl_domain_webform_form_submit(&$form, FormStateInterface $form_state) {
+  $domains = $form_state->getValue('domain_id');
+  $domain_ids = [];
+  foreach ($domains as $key => $domain) {
+    if ($domain) {
+      $domain_ids[] = $key;
+    }
+  }
+  if ($entity = $form_state->getFormObject()->getEntity()) {
+    $entity->set('domain_ids', ';' . implode(';', $domain_ids) . ';');
+    $entity->save();
+  }
+}
+
+/**
+ * Implements hook_webform_submission_create().
+ */
+function hcl_domain_webform_webform_submission_create(WebformSubmissionInterface $entity) {
+  $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
+
+  if (!empty($domain)) {
+    $entity->set('domain_id', $domain->id());
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $webform_form_ids = ['webform_submission_filter_form', 'webform_filter_form'];
+  if (in_array($form_id, $webform_form_ids)) {
+    $filter_access = !hcl_domain_webform_is_local_admin() ? TRUE : FALSE;
+    $selected = \Drupal::request()->query->get('domain');
+
+    $options = ['' => t('All domains')];
+    foreach (Domain::loadMultiple() as $domain) {
+      $options[$domain->id()] = $domain->label();
+    }
+    $form['filter']['search']['#weight'] = -5;
+    $form['filter']['state']['#weight'] = -4;
+    $form['filter']['domain'] = [
+      '#type' => 'select',
+      '#title_display' => 'hidden',
+      '#title' => t('Domain'),
+      '#options' => $options,
+      '#default_value' => ($selected && in_array($selected, array_keys($options))) ? $selected : NULL,
+      '#weight' => -3,
+      '#access' => $filter_access,
+    ];
+
+    $form['#submit'][] = 'hcl_domain_webform_form_webform_submission_filter_form_submit';
+  }
+
+  if ($form_id == 'webform_settings_form_form') {
+    $entity = $form_state->getFormObject()->getEntity();
+    $form['third_party_settings']['#tree'] = TRUE;
+
+    $options = [];
+    foreach (Domain::loadMultiple() as $domain) {
+      $options[$domain->id()] = $domain->label();
+    }
+    $selected_list = $entity->get('domain_ids');
+
+    $selected_list = explode(';', $selected_list ?? '');
+    array_shift($selected_list);
+    array_pop($selected_list);
+    $form['domain_id'] = [
+      '#type' => 'checkboxes',
+      '#title' => t('Domain Access'),
+      '#options' => $options,
+      '#default_value' =>  $selected_list ?? [],
+    ];
+    $form['actions']['submit']['#submit'][] = 'hcl_domain_webform_form_submit';
+  }
+
+  if ($form_id == 'webform_submission_filter_form') {
+    $config = \Drupal::config('hcl_domain_webform.auto_delete_submissions.settings');
+    $form['cron_job'] = [
+      '#type' => 'inline_template',
+      '#template' => '<p><span style="color:red;">*** </span>Webform submissions older than <strong style="color:red;">{{expiry_duration}} days</strong> will be automatically removed.</p>',
+      '#context' => [
+        'expiry_duration' => $config->get('expiry_duration'),
+      ],
+      '#access' => $config->get('auto_deletion') ? TRUE : FALSE,
+    ];
+    $form['#cache']['tags'][] = 'config:hcl_domain_webform.auto_delete_submissions.settings';
+  }
+}
+
+/**
+ * Submit handler for our custom field.
+ */
+function hcl_domain_webform_form_webform_submission_filter_form_submit($form, FormStateInterface $form_state) {
+  $form_state->getRedirect()->mergeOptions([
+    'query' => [
+      'domain' => $form_state->getValue('domain'),
+    ],
+  ]);
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function hcl_domain_webform_query_domain_webform_filter_alter(AlterableInterface $query) {
+  $is_local_admin = hcl_domain_webform_is_local_admin();
+  if ($is_local_admin) {
+    $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
+    $query->condition('webform_submission.domain_id', $domain->id());
+  }
+  elseif ($domain = \Drupal::request()->query->get('domain')) {
+    $query->condition('webform_submission.domain_id', $domain);
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * The domain field is required when the domain module is enabled. Otherwise
+ * submissions end up on the wrong domain. This field is added as separate
+ * database field for optimized querying.
+ *
+ * Alternative is a node_grants alternative / solution?
+ */
+function hcl_domain_webform_entity_base_field_info(EntityTypeInterface $entity_type) {
+  if ($entity_type->id() == 'webform_submission') {
+    $fields = [];
+    $fields['domain_id'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Domain'))
+      ->setDescription(t('The source of the submissions.'))
+      ->setSettings([
+        'target_type' => 'domain',
+      ]);
+
+    return $fields;
+  }
+}
+
+/**
+ * Checks if the current user is local admin or not.
+ */
+function hcl_domain_webform_is_local_admin() {
+  $current_user = \Drupal::currentUser()->getAccount();
+  $current_user_roles = $current_user->getRoles();
+  $local_admin_roles = [
+    'hr_team',
+    'sdmt_office_of_cmo',
+    'employer_brand_team',
+    'local_admin',
+  ];
+  return array_intersect($current_user_roles, $local_admin_roles) ? TRUE : FALSE;
+}
+
+/**
+ * Implements hook_entity_presave().
+ *
+ * Maps domain id on new werform create/duplicate.
+ */
+function hcl_domain_webform_webform_presave(WebformInterface $entity) {
+  if ($entity->isNew() &&
+  empty($entity->get('domain_ids'))) {
+    $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
+    if ($domain) {
+      $entity->set('domain_ids', ';' . $domain->id() . ';');
+    }
+  }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Deletes webform submissions older than 30 days.
+ */
+function hcl_domain_webform_cron() {
+  $config = \Drupal::config('hcl_domain_webform.auto_delete_submissions.settings');
+  if ($config && $config->get('auto_deletion')) {
+    $expiry_duration = $config->get('expiry_duration');
+    $timestamp = strtotime("-{$expiry_duration} days");
+    // Assigning timetamp to form_state.
+    $values = ['timestamp' => $timestamp];
+    $form_state = (new FormState())->setValues($values);
+    \Drupal::formBuilder()->submitForm('Drupal\hcl_domain_webform\Form\DeleteSubmissionsConfirmForm', $form_state);
+  }
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function hcl_domain_webform_views_data_alter(array &$data) {
+  $data['webform_submission']['domain_webform'] = [
+    'title' => t('Filter Webform Submission by domain'),
+    'filter' => [
+      'title' => t('Filter Webform Submission by domain'),
+      'help' => t('Filters the webform submission based on the domain they are enabled for.'),
+      'field' => 'sid',
+      'id' => 'domain_webform_filter',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_webform_access().
+ */
+function hcl_domain_webform_webform_access(EntityInterface $entity, $operation, AccountInterface $account) {
+  $current_domain = \Drupal::getContainer()
+    ->get('domain.negotiator')
+    ->getActiveDomain();
+  if ($operation == "submission_page" && $current_domain instanceof DomainInterface) {
+    $allowed_domains = $entity->get('domain_ids') ?? '';
+    $allowed_domains = explode(';', $allowed_domains);
+    return AccessResult::forbiddenIf(!in_array($current_domain->id(), $allowed_domains));
+  }
+}
