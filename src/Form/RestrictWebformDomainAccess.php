@@ -1,4 +1,4 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Drupal\hcl_domain_webform\Form;
 
@@ -14,14 +14,14 @@ final class RestrictWebformDomainAccess extends ConfigFormBase {
 
   /**
    * Contains the entity type manager instance.
-   * 
+   *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityManager;
 
   /**
    * Constructs the required dependency of the form.
-   * 
+   *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   Contains the entity type manager instance.
    */
@@ -57,7 +57,7 @@ final class RestrictWebformDomainAccess extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $available_roles = $this->entityManager->getStorage('user_role')->loadMultiple();
-    // Unseting the annonymous and administrator user roles, as these roles do 
+    // Unseting the annonymous and administrator user roles, as these roles do
     // not require permission explicitely to view webforms.
     unset($available_roles['anonymous']);
     unset($available_roles['authenticated']);
@@ -83,7 +83,7 @@ final class RestrictWebformDomainAccess extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $selected_roles = array_filter($form_state->getValue('roles_to_restrict'),
-    function($value) {
+    function ($value) {
       return $value;
     });
 

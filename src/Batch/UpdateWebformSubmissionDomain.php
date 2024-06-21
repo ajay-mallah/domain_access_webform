@@ -26,22 +26,23 @@ class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
    */
   public static function batchFinishedCallback(bool $success, array $results, array $operations) {
     $messenger = \Drupal::messenger();
+    $translator = \Drupal::translation();
     if (isset($results['success'])) {
-      $messenger->addMessage(t(
+      $messenger->addMessage($translator->translate(
         '@count Webforms domain has been updated.', [
           '@count' => $results['success'],
         ]
       ));
     }
     elseif (isset($results['failed'])) {
-      $messenger->addError(t(
+      $messenger->addError($translator->translate(
         '@count Webforms domain has been failed.', [
           '@count' => $results['failed'],
         ]
       ));
     }
     else {
-      $messenger->addError(t('Batch proccess ended with an error'));
+      $messenger->addError($translator->translate('Batch proccess ended with an error'));
     }
   }
 

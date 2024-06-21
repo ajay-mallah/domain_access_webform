@@ -1,0 +1,27 @@
+{
+    "name": "drupal/domain_access_webform",
+    "description": "Allows Restriction to the webforms and their submissions based on assigned domains.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/domain_access_webform",
+    "authors": [
+      {
+        "name": "Vishal Prasad",
+        "homepage": "https://www.drupal.org/u/vishal-prasad",
+        "role": "Maintainer"
+      },
+      {
+        "name": "Ajay Mallah",
+        "homepage": "https://www.drupal.org/u/ajay-mallah",
+        "role": "Maintainer"
+      }
+    ],
+    "support": {
+      "issues": "https://www.drupal.org/project/issues/register_with_otp",
+      "source": "https://git.drupalcode.org/project/register_with_otp"
+    },
+    "require": {
+        "drupal/domain": "^2.0@beta",
+        "drupal/webform": "^6.2"
+    }
+}

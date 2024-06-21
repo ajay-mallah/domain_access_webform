@@ -1,0 +1,5 @@
+hcl_domain_webform.inline_radios:
+  version: 1.x
+  css:
+    theme:
+      css/inline_radios.css: {}

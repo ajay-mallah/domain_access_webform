@@ -31,32 +31,14 @@ function hcl_domain_webform_entity_type_alter(array &$entity_types) {
     // Merge the existing config export keys with the new ones.
     $entity_types['webform']->set('config_export', array_merge($config_export, $extra_keys));
     $entity_types['webform']->setListBuilderClass('Drupal\hcl_domain_webform\HCLWebformEntityListBuilder');
-    \Drupal::logger('hcl_domain_webform')->notice('new webform builder is being used', [
-      'BuilderClass' => $entity_types['webform']->getListBuilderClass(),
-    ]);
-  }
-  else {
-    \Drupal::logger('hcl_domain_webform')->alert('Unable to overwrite the listbuilder class, already overwritten?', [
-      'BuilderClass' => $entity_types['webform']->getListBuilderClass(),
-    ]);
   }
 
   if ($entity_types['webform_submission']->getListBuilderClass() == 'Drupal\webform\WebformSubmissionListBuilder') {
     $entity_types['webform_submission']->setListBuilderClass('Drupal\hcl_domain_webform\DomainWebformSubmissionListBuilder');
   }
-  else {
-    \Drupal::logger('domain_webform')->alert('Unable to overwrite the listbuilder class, already overwritten?', [
-      'BuilderClass' => $entity_types['webform_submission']->getListBuilderClass(),
-    ]);
-  }
 
   if ($entity_types['webform_submission']->getStorageClass() == 'Drupal\webform\WebformSubmissionStorage') {
     $entity_types['webform_submission']->setStorageClass('Drupal\hcl_domain_webform\DomainWebformSubmissionStorage');
-  }
-  else {
-    \Drupal::logger('domain_webform')->alert('Unable to overwrite the storage class, already overwritten?', [
-      'StorageClass' => $entity_types['webform_submission']->getStorageClass(),
-    ]);
   }
 }
 
@@ -137,19 +119,6 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
     ];
     $form['actions']['submit']['#submit'][] = 'hcl_domain_webform_form_submit';
   }
-
-  if ($form_id == 'webform_submission_filter_form') {
-    $config = \Drupal::config('hcl_domain_webform.auto_delete_submissions.settings');
-    $form['cron_job'] = [
-      '#type' => 'inline_template',
-      '#template' => '<p><span style="color:red;">*** </span>Webform submissions older than <strong style="color:red;">{{expiry_duration}} days</strong> will be automatically removed.</p>',
-      '#context' => [
-        'expiry_duration' => $config->get('expiry_duration'),
-      ],
-      '#access' => $config->get('auto_deletion') ? TRUE : FALSE,
-    ];
-    $form['#cache']['tags'][] = 'config:hcl_domain_webform.auto_delete_submissions.settings';
-  }
 }
 
 /**
@@ -227,23 +196,6 @@ function hcl_domain_webform_webform_presave(WebformInterface $entity) {
     if ($domain) {
       $entity->set('domain_ids', ';' . $domain->id() . ';');
     }
-  }
-}
-
-/**
- * Implements hook_cron().
- *
- * Deletes webform submissions older than 30 days.
- */
-function hcl_domain_webform_cron() {
-  $config = \Drupal::config('hcl_domain_webform.auto_delete_submissions.settings');
-  if ($config && $config->get('auto_deletion')) {
-    $expiry_duration = $config->get('expiry_duration');
-    $timestamp = strtotime("-{$expiry_duration} days");
-    // Assigning timetamp to form_state.
-    $values = ['timestamp' => $timestamp];
-    $form_state = (new FormState())->setValues($values);
-    \Drupal::formBuilder()->submitForm('Drupal\hcl_domain_webform\Form\DeleteSubmissionsConfirmForm', $form_state);
   }
 }
 
