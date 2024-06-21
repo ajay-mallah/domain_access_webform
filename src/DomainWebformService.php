@@ -7,7 +7,7 @@ use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
- * Clones nodes from entityQueues.
+ * DomainWebformService class to provides services.
  */
 class DomainWebformService {
 
@@ -33,8 +33,7 @@ class DomainWebformService {
    * @param \Drupal\Core\Logger\LoggerChannelFactory $logger
    *   Describes a logger instance.
    */
-  public function __construct(EntityTypeManager $entityTypeManager,
-  LoggerChannelFactory $logger) {
+  public function __construct(EntityTypeManager $entityTypeManager, LoggerChannelFactory $logger) {
     $this->entityTypeManager = $entityTypeManager;
     $this->logger = $logger;
   }
@@ -44,21 +43,22 @@ class DomainWebformService {
    *
    * @param string $webform_id
    *   Webform id.
-   * @param array $domain_ids
+   * @param string $domain_ids
    *   Array containing the domain ids.
    */
-  public function mapDomain(string $webform_id, array $domain_ids) {
+  public function mapDomain(string $webform_id, string $domain_ids) {
+    $webform = $this->entityTypeManager->getStorage('webform')->load($webform_id);
     try {
       /** @var \Drupal\webform\WebformInterface */
       $webform = $this->entityTypeManager->getStorage('webform')->load($webform_id);
       if ($webform) {
-        $webform->setThirdPartySetting('hcl_domain_webform', 'domain_id', $domain_ids);
+        $webform->set('domain_ids', $domain_ids);
         $webform->save();
       }
       return $webform;
     }
     catch (\Exception $e) {
-      $this->logger->get('hcl_domain_webform')->error($e->getMessage());
+      $this->logger->get('domain_access_webform')->error($e->getMessage());
       return NULL;
     }
   }
@@ -72,14 +72,9 @@ class DomainWebformService {
   public function mapSubmissionsDomain(string $webform_id) {
     try {
       if ($webform_domain_ids = $this->getWebformDomainIds($webform_id)) {
-        // Fetching all the submissions.
         $submissions = $this->entityTypeManager->getStorage('webform_submission')
           ->loadByProperties(['webform_id' => $webform_id]);
-        // Result array.
-        $result = [
-          'success' => 0,
-          'failed' => 0,
-        ];
+        $result = ['success' => 0, 'failed' => 0];
         foreach ($submissions as $submission) {
           if ($this->updateWebformSubmission($submission, $webform_domain_ids)) {
             $result['success']++;
@@ -92,7 +87,7 @@ class DomainWebformService {
       }
     }
     catch (\Exception $e) {
-      $this->logger->get('hcl_domain_webform')->error($e->getMessage());
+      $this->logger->get('domain_access_webform')->error($e->getMessage());
       return NULL;
     }
   }
@@ -107,7 +102,7 @@ class DomainWebformService {
     /** @var \Drupal\webform\WebformInterface */
     $webform = $this->entityTypeManager->getStorage('webform')->load($webform_id);
     if ($webform) {
-      return $webform->getThirdPartySetting('hcl_domain_webform', 'domain_id');
+      return $webform->get('domain_ids');
     }
     return NULL;
   }

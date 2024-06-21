@@ -1,0 +1,4 @@
+grant all webform access:
+  title: 'Grant all webform access'
+  description: 'Allows users to access all the webforms even he is not assigned to the domain'
+

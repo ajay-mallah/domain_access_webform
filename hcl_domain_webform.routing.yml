@@ -1,11 +1,3 @@
-hcl_domain_webform.auto_delete_submissions:
-  path: '/admin/config/webform/auto_delete_submissions'
-  defaults:
-    _form: \Drupal\hcl_domain_webform\Form\AutoDeleteSubmissionsForm
-    _title: 'Auto-deletion'
-  requirements:
-    _role: 'administrator'
-
 hcl_domain_webform.webform_domain_update:
   path: '/admin/webform-domain/form'
   defaults:

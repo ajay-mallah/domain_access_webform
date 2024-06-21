@@ -16,12 +16,12 @@ class UpdateWebformDomain {
    *
    * @param string $webform_id
    *   Webform ids.
-   * @param array $domain_ids
+   * @param string $domain_ids
    *   Domain target ids.
    * @param array $context
    *   The batch context.
    */
-  public static function updateDomain(string $webform_id, array $domain_ids, array &$context) {
+  public static function updateDomain(string $webform_id, string $domain_ids, array &$context) {
     $domain_webform = \Drupal::service('hcl_domain_webform.domain_webform');
     $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
     if ($webform) {
@@ -45,23 +45,24 @@ class UpdateWebformDomain {
    *   A list of the operations that had not been completed.
    */
   public static function batchFinishedCallback(bool $success, array $results, array $operations) {
+    $translator = \Drupal::translation();
     $messenger = \Drupal::messenger();
     if (!empty($results['success'])) {
-      $messenger->addMessage(t(
+      $messenger->addMessage($translator->translate(
         '@count Webforms domain has been updated.', [
           '@count' => count($results['success']),
         ]
       ));
     }
     elseif (!empty($results['failed'])) {
-      $messenger->addError(t(
+      $messenger->addError($translator->translate(
         '@count Webforms domain has been failed.', [
           '@count' => count($results['failed']),
         ]
       ));
     }
     else {
-      $messenger->addError(t('Batch proccess ended with an error'));
+      $messenger->addError($translator->translate('Batch proccess ended with an error'));
     }
   }
 

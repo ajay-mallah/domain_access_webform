@@ -6,14 +6,20 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\FileInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * The form builder class for providing access to users.
+ * The form builder class for updating mapping domains with the webforms.
  */
 class WeboformDomainUpdateForm extends FormBase {
+
+  /**
+   * Proccessed CSV data.
+   *
+   * @var array
+   */
+  protected $csvData;
 
   /**
    * The entity type manager.
@@ -61,20 +67,23 @@ class WeboformDomainUpdateForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
     $form['detail'] = [
-      '#markup' => $this->t("Update webform's domain by uploading file(csv, xls, xlsx)."),
+      '#markup' => $this->t("Upload CSV file to map webforms with the domain."),
     ];
 
     $form['upload_excel_file'] = [
       '#type' => 'managed_file',
-      '#title' => $this->t('Add users from file'),
-      '#size' => 20,
-      '#description' => $this->t('The file should contain the webform id in the first column and domain(microsites) in the second column and first row is for the headers. (Only .csv, .xlsx, .xls files are allowed).'),
-      '#upload_validators' => [
-        'file_validate_extensions' => ['csv xls xlsx'],
-      ],
+      '#element_validate' => ['::validateCsv'],
+      '#title' => $this->t('Upload user data in CSV'),
+      '#description' => "
+        <p>First row of the csv file will be header [webform_id, domain_id]</p>
+        <p>Only signle webform_id is allowed in a row</p>
+        <p>Multiple domain_id is allowed followed seperated by | . E.g. site_1|site_2</p>
+      ",
       '#upload_location' => 'public://bulk-import/excel_files/',
+      '#upload_validators' => [
+        'file_validate_extensions' => ['csv'],
+      ],
       '#required' => TRUE,
     ];
 
@@ -88,23 +97,39 @@ class WeboformDomainUpdateForm extends FormBase {
   }
 
   /**
+   * Validates for CSV file.
+   *
+   * @param array $form
+   *   Form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Provides an interface for an object containing the current form's state.
+   */
+  public function validateCsv(array &$form, FormStateInterface $form_state) {
+    $fileUploaded = $form_state->getValue(['upload_excel_file', 'fids', 0]) ?? NULL;
+    if ($fileUploaded) {
+      $file = $this->entityTypeManager->getStorage('file')->load($fileUploaded);
+      $this->csvData = $this->fetchFileData($file);
+      if ($this->csvData === NULL) {
+        $form_state->setErrorByName('upload_excel_file', $this->t('CSV file contains name email mapping in invalid formate.'));
+      }
+      $file->delete();
+    }
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $operations = [];
-    $fileUploaded = $form_state->getValue(['upload_excel_file', 0]) ?? NULL;
-    if ($fileUploaded) {
-      // Load the object of the file by its fid.
-      $file = $this->entityTypeManager->getStorage('file')->load($fileUploaded);
-      $datas = $this->fetchFileData($file);
-      foreach ($datas as $webform_id => $domain_ids) {
+    if ($this->csvData) {
+      foreach ($this->csvData as $webform_id => $domain_ids) {
         $operations[] = [
           '\Drupal\hcl_domain_webform\Batch\UpdateWebformDomain::updateDomain',
           [$webform_id, $domain_ids],
         ];
       }
       $batch = [
-        'title' => $this->t("Updating webform's domain"),
+        'title' => $this->t("Processing webforms..."),
         'operations' => $operations,
         'progress_message' => $this->t('Processed @current out of @total.'),
         'finished' => '\Drupal\hcl_domain_webform\Batch\UpdateWebformDomain::batchFinishedCallback',
@@ -121,47 +146,38 @@ class WeboformDomainUpdateForm extends FormBase {
    */
   protected function fetchFileData(FileInterface $file) {
     if ($file) {
-      $row_data = [];
-      // Set the status flag permanent of the file object.
-      $file->setPermanent();
-      // Save the file in the database.
-      $file->save();
-      $inputFileName = $this->fileSystem->realpath($file->getFileUri());
-      $spreadsheet = IOFactory::load($inputFileName);
-      $sheetData = $spreadsheet->getActiveSheet();
-      foreach ($sheetData->getRowIterator() as $row) {
-        $cellIterator = $row->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(FALSE);
-        $cells = [];
-        foreach ($cellIterator as $cell) {
-          $cells[] = $cell->getValue();
+      $spreadsheet = fopen($file->getFileUri(), 'r');
+      $rows = [];
+      while (!feof($spreadsheet)) {
+        $row = fgetcsv($spreadsheet, NULL, ",");
+        if ($row) {
+          array_push($rows, $row);
         }
-        $row_data[] = $cells;
       }
-      // Remove 1st line that is header.
-      array_shift($row_data);
-      // Returning the processed row data.
-      return $this->processData($row_data);
+      fclose($spreadsheet);
+      if ($rows) {
+        // Remove 1st line that is header.
+        array_shift($rows);
+        return $this->processData($rows);
+      }
+      return NULL;
     }
   }
 
   /**
-   * Processes webform and related domains.
+   * Processes CSV data into a string format.
    *
    * @param array $row_data
-   *   Defines getter and setter methods for file entity base fields.
+   *   Row data of the csv file.
    */
   protected function processData(array $row_data) {
     $data = [];
     foreach ($row_data as $row) {
       $webform_id = $row[0];
       if (!empty($webform_id)) {
-        // Removing whitespaces.
-        $domain_string = str_replace(' ', '', $row[1]);
-        // Converting domain_ids string into array.
-        $domains = explode(',', $domain_string);
-        $data[$webform_id] = isset($data[$webform_id]) ? array_merge($data[$webform_id], $domains) : $domains;
-        $data[$webform_id] = array_unique($data[$webform_id]);
+        $domain_string = str_replace('|', ';', $row[1]);
+        $domain_string = ';' . $domain_string . ';';
+        $data[$webform_id] = isset($data[$webform_id]) ? $data[$webform_id] . ';' . $domain_string : $domain_string;
       }
     }
     return $data;
