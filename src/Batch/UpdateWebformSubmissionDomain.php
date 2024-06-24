@@ -3,22 +3,25 @@
 namespace Drupal\hcl_domain_webform\Batch;
 
 /**
- * Bulk User Manager class.
+ * Batch process to submissions with the selected domain in bulk.
  */
 class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
 
   /**
-   * {@inheritdoc}
+   * Maps submissions.
+   *
+   * @param array $chunks
+   *   List of submissions.
+   * @param string $domain_id
+   *   Domain target ids.
+   * @param array $context
+   *   The batch context.
    */
-  public static function updateSubmissionDomain(string $webform_id, array &$context) {
+  public static function updateSubmissionDomain(array $chunks, string $domain_id, array &$context) {
     $domain_webform = \Drupal::service('hcl_domain_webform.domain_webform');
-    $result = $domain_webform->mapSubmissionsDomain($webform_id);
-    // Adding success updations count.
-    $context['results']['success'] = $context['results']['success'] ?? 0;
-    $context['results']['success'] += $result['success'] ?? 0;
-    // Adding failed updations count.
-    $context['results']['failed'] = $context['results']['failed'] ?? 0;
-    $context['results']['failed'] += $result['failed'] ?? 0;
+    $domain_webform->mapSubmissionsDomain($chunks, $domain_id);
+    $context['results']['success'] = isset($context['results']['success']) ?
+    $context['results']['success'] + count($chunks) : count($chunks);
   }
 
   /**
@@ -31,13 +34,6 @@ class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
       $messenger->addMessage($translator->translate(
         '@count Webforms domain has been updated.', [
           '@count' => $results['success'],
-        ]
-      ));
-    }
-    elseif (isset($results['failed'])) {
-      $messenger->addError($translator->translate(
-        '@count Webforms domain has been failed.', [
-          '@count' => $results['failed'],
         ]
       ));
     }

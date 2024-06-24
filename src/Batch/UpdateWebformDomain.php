@@ -5,7 +5,7 @@ namespace Drupal\hcl_domain_webform\Batch;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Bulk User Manager class.
+ * Batch process to map webforms with the domains.
  */
 class UpdateWebformDomain {
 
