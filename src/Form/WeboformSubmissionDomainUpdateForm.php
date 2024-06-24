@@ -59,6 +59,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
     ];
 
     $header = [
+      'enabled' => $this->t('Enable'),
       'webforms' => $this->t('Webforms'),
       'domains' => $this->t('Domains'),
     ];
@@ -70,6 +71,10 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
     ];
 
     foreach ($this->webformList as $key => $webform) {
+      $form['domain_matrix'][$key]['enabled'] = [
+        '#type' => 'checkbox',
+        '#default_value' => FALSE,
+      ];
       $form['domain_matrix'][$key]['label'] = [
         '#markup' => $this->t('@label', [
           '@label' => $webform['label'],
@@ -95,26 +100,27 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // dump($form_state->getValue(['domain_matrix', 'contact_us_hcl', 'domain']));
-    // dd($form_state->getValue('domain_matrix'));
+    $domain_matrix = $form_state->getValue('domain_matrix');
+    $mapped_webform = [];
+    foreach ($domain_matrix as $key => $row) {
+      if ($row['enabled'] == 1) {
+        $mapped_webform[$key] = $row['domain'];
+      }
+    }
 
-    // $operations = [];
-    // if (!empty($webform_ids)) {
-    //   // Load the object of the file by its fid.
-    //   foreach ($webform_ids as $webform_id) {
-    //     $operations[] = [
-    //       '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
-    //       [$webform_id],
-    //     ];
-    //   }
-    //   $batch = [
-    //     'title' => $this->t("Updating webform Submission's domain"),
-    //     'operations' => $operations,
-    //     'progress_message' => $this->t('Processed @current out of @total.'),
-    //     'finished' => '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
-    //   ];
-    //   batch_set($batch);
-    // }
+    if (!empty($mapped_webform)) {
+      foreach ($mapped_webform as $key => $domain_id) {
+        $query = $this->entityTypeManager->getStorage('webform_submission')
+          ->getQuery()
+          ->accessCheck(TRUE);
+        $query->condition('webform_id', $key);
+        $sids = $query->execute();
+        if (!empty($sids)) {
+          $chunks = array_chunk($sids, 100);
+          $this->setBatchProcess($chunks, $domain_id);
+        }
+      }
+    }
   }
 
   /**
@@ -160,6 +166,32 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
       }
     }
     return $associated_array;
+  }
+
+  /**
+   * Sets Batch process to map webform submissions.
+   *
+   * @param array $chunks
+   *   Contains chunks of webform submissions.
+   * @param string $domain_id
+   *   Target domain id.
+   */
+  protected function setBatchProcess(array $chunks, string $domain_id) {
+    $operations = [];
+    foreach ($chunks as $chunk) {
+      $operations[] = [
+        '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
+        [$chunk, $domain_id],
+      ];
+    }
+    $batch = [
+      'title' => $this->t("Processsing webform submissions..."),
+      'operations' => $operations,
+      'progress_message' => $this->t('Processed @current out of @total.'),
+      'finished' => '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
+    ];
+
+    batch_set($batch);
   }
 
 }

@@ -1,17 +1,17 @@
 hcl_domain_webform.domain_webform:
-  title: 'Domain webform'
+  title: 'domain access webform'
   route_name: hcl_domain_webform.webform_domain_update
   base_route: entity.webform.collection
   weight: 150
 
 hcl_domain_webform.webform_domain_update:
-  title: 'Map Webform Domain'
+  title: 'Map Webforms'
   route_name: hcl_domain_webform.webform_domain_update
   parent_id: hcl_domain_webform.domain_webform
   weight: 10
 
 hcl_domain_webform.webform_submission_domain_update:
-  title: 'Map Webform Submission Domain'
+  title: 'Map Submissions'
   route_name: hcl_domain_webform.webform_submission_domain_update
   parent_id: hcl_domain_webform.domain_webform
   weight: 20
