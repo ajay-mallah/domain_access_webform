@@ -1,9 +1,8 @@
 # Domain Webform Access
 
 The Domain Webform Access module allows you to restrict access to webforms and
-their submissions based on assigned domains. It automatically assigns the active
-domain to forms and submissions at the time of their creation or submission.
-Additionally, it provides an extra filter for both forms and submissions.
+their submissions based on assigned domains. It provides an interfact to map
+forms and submissions with the provided domain.
 
 For a full description of the module, visit the
 [project page](https://www.drupal.org/project/domain_webform_access).
@@ -16,8 +15,8 @@ Submit bug reports and feature suggestions, or track changes in the
 
 This module requires following modules:
 
-- [webform](https://www.drupal.org/project/webform).
-- [domain](https://www.drupal.org/project/domain).
+- [webform](https://www.drupal.org/project/webform)
+- [domain](https://www.drupal.org/project/domain)
 
 ## Installation
 
@@ -26,8 +25,20 @@ information, see
 [Installing Drupal Modules](https://www.drupal.org/docs/extending-drupal/installing-drupal-modules).
 
 
-### Domain Webform Access permissions
+## Configuration
 
+### Assigning domain to the webform form
+- Go to the `/admin/structure/webform/manage/[webform]/settings/form` to assign
+domains by selecting `domain access` field.
+- Go to the `/admin/domain-access-webform/form` and upload CSV file to map
+domains in a bulk.
+
+### Assigning domain to the webform submissions
+- Go to the `/admin/domain-access-webform/form` and select webforms to map their
+submissions with the selected domain.
+- Only one domain can be assigned to submissions.
+
+### Configure webform access permission
 - User having permission `Grant all webform access` will be able to access all
 the webforms wether they are assigned to that domain or not. 
 

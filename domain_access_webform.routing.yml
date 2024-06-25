@@ -1,5 +1,5 @@
 domain_access_webform.webform_domain_update:
-  path: '/admin/webform-domain/form'
+  path: '/admin/domain-access-webform/form'
   defaults:
     _form: '\Drupal\domain_access_webform\Form\WeboformDomainUpdateForm'
     _title: 'Webform Domain Update'
@@ -13,13 +13,3 @@ domain_access_webform.webform_submission_domain_update:
     _title: 'Webform Submission Domain Update'
   requirements:
     _role: 'administrator'
-
-
-
-domain_access_webform.restrict_webform_domain_access:
-  path: '/admin/config/restrict-webform-domain-access'
-  defaults:
-    _title: 'Restrict webform domain access'
-    _form: 'Drupal\domain_access_webform\Form\RestrictWebformDomainAccess'
-  requirements:
-    _permission: 'administer site configuration'
