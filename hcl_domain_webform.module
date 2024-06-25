@@ -10,7 +10,6 @@ use Drupal\Core\Database\Query\AlterableInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\domain\DomainInterface;
@@ -95,7 +94,6 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
         ->generateDomainOptions($domain_entities);
     }
 
-
     $form['filter']['search']['#weight'] = -5;
     $form['filter']['state']['#weight'] = -4;
     $form['filter']['domain'] = [
@@ -128,7 +126,7 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
       '#type' => 'checkboxes',
       '#title' => t('Domain Access'),
       '#options' => $options,
-      '#default_value' =>  $selected_list ?? [],
+      '#default_value' => $selected_list ?? [],
     ];
     $form['actions']['submit']['#submit'][] = 'hcl_domain_webform_form_submit';
   }
@@ -156,7 +154,7 @@ function hcl_domain_webform_query_domain_webform_filter_alter(AlterableInterface
 
   if (!$current_user->hasPermission('grant all webform access')) {
     $allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
-    ->getUserAllowedDomains($current_user);
+      ->getUserAllowedDomains($current_user);
 
     /** @var \Drupal\Core\Entity\Query */
     $query = $query;

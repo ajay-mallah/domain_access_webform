@@ -4,5 +4,5 @@ description: Domain Webform
 package: Custom
 core_version_requirement: ^9.5 || ^10
 dependencies:
-  - domain
-  - webform
+  - drupal:domain
+  - drupal:webform

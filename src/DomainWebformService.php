@@ -93,10 +93,10 @@ class DomainWebformService {
 
   /**
    * Provides the alowed domain of the user.
-   * 
+   *
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The user account object.
-   * 
+   *
    * @return array
    *   Returns the array of user allowed domains.
    */
@@ -114,10 +114,10 @@ class DomainWebformService {
 
   /**
    * Generates the domain dropdown options.
-   * 
-   * @param array $domain_ids
+   *
+   * @param array $domains
    *   Takes the array of domain objects.
-   * 
+   *
    * @return array
    *   Returns the array of generated options.
    */
