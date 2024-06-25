@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform\Form;
+namespace Drupal\domain_access_webform\Form;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
@@ -124,7 +124,7 @@ class WeboformDomainUpdateForm extends FormBase {
     if ($this->csvData) {
       foreach ($this->csvData as $webform_id => $domain_ids) {
         $operations[] = [
-          '\Drupal\hcl_domain_webform\Batch\UpdateWebformDomain::updateDomain',
+          '\Drupal\domain_access_webform\Batch\UpdateWebformDomain::updateDomain',
           [$webform_id, $domain_ids],
         ];
       }
@@ -132,7 +132,7 @@ class WeboformDomainUpdateForm extends FormBase {
         'title' => $this->t("Processing webforms..."),
         'operations' => $operations,
         'progress_message' => $this->t('Processed @current out of @total.'),
-        'finished' => '\Drupal\hcl_domain_webform\Batch\UpdateWebformDomain::batchFinishedCallback',
+        'finished' => '\Drupal\domain_access_webform\Batch\UpdateWebformDomain::batchFinishedCallback',
       ];
       batch_set($batch);
     }

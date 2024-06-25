@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform\Batch;
+namespace Drupal\domain_access_webform\Batch;
 
 /**
  * Batch process to submissions with the selected domain in bulk.
@@ -18,7 +18,7 @@ class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
    *   The batch context.
    */
   public static function updateSubmissionDomain(array $chunks, string $domain_id, array &$context) {
-    $domain_webform = \Drupal::service('hcl_domain_webform.domain_webform');
+    $domain_webform = \Drupal::service('domain_access_webform.domain_webform');
     $domain_webform->mapSubmissionsDomain($chunks, $domain_id);
     $context['results']['success'] = isset($context['results']['success']) ?
     $context['results']['success'] + count($chunks) : count($chunks);
@@ -32,7 +32,7 @@ class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
     $translator = \Drupal::translation();
     if (isset($results['success'])) {
       $messenger->addMessage($translator->translate(
-        '@count Webforms domain has been updated.', [
+        '@count Submissions has been updated.', [
           '@count' => $results['success'],
         ]
       ));

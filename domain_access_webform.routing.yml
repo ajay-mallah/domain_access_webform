@@ -1,25 +1,25 @@
-hcl_domain_webform.webform_domain_update:
+domain_access_webform.webform_domain_update:
   path: '/admin/webform-domain/form'
   defaults:
-    _form: '\Drupal\hcl_domain_webform\Form\WeboformDomainUpdateForm'
+    _form: '\Drupal\domain_access_webform\Form\WeboformDomainUpdateForm'
     _title: 'Webform Domain Update'
   requirements:
     _role: 'administrator'
 
-hcl_domain_webform.webform_submission_domain_update:
+domain_access_webform.webform_submission_domain_update:
   path: '/admin/webform-submission-domain/form'
   defaults:
-    _form: '\Drupal\hcl_domain_webform\Form\WeboformSubmissionDomainUpdateForm'
+    _form: '\Drupal\domain_access_webform\Form\WeboformSubmissionDomainUpdateForm'
     _title: 'Webform Submission Domain Update'
   requirements:
     _role: 'administrator'
 
 
 
-hcl_domain_webform.restrict_webform_domain_access:
+domain_access_webform.restrict_webform_domain_access:
   path: '/admin/config/restrict-webform-domain-access'
   defaults:
     _title: 'Restrict webform domain access'
-    _form: 'Drupal\hcl_domain_webform\Form\RestrictWebformDomainAccess'
+    _form: 'Drupal\domain_access_webform\Form\RestrictWebformDomainAccess'
   requirements:
     _permission: 'administer site configuration'

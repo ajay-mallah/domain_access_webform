@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform\Plugin\views\filter;
+namespace Drupal\domain_access_webform\Plugin\views\filter;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -143,7 +143,7 @@ class FilterWebformByDomain extends StringFilter {
    *   Returns the domain list as an array.
    */
   private function getAllowedDomains() {
-    /** @var \Drupal\user\Entity\User */
+    /** @var \Drupal\user\Entity\UserInterface */
     $user = $this->entityTypeManager->getStorage('user')->load($this->currentUser->id());
     $allowed_domains = $user->get('field_domain_access')->referencedEntities();
 

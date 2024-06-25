@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Primary module hooks for hcl_domain_webform module.
+ * Primary module hooks for domain_access_webform module.
  */
 
 use Drupal\Core\Access\AccessResult;
@@ -20,7 +20,7 @@ use Drupal\webform\WebformSubmissionInterface;
 /**
  * Implements hook_entity_type_alter().
  */
-function hcl_domain_webform_entity_type_alter(array &$entity_types) {
+function domain_access_webform_entity_type_alter(array &$entity_types) {
   if ($entity_types['webform']->getListBuilderClass() == 'Drupal\webform\WebformEntityListBuilder') {
     $config_export = $entity_types['webform']->get('config_export');
 
@@ -29,22 +29,22 @@ function hcl_domain_webform_entity_type_alter(array &$entity_types) {
     ];
     // Merge the existing config export keys with the new ones.
     $entity_types['webform']->set('config_export', array_merge($config_export, $extra_keys));
-    $entity_types['webform']->setListBuilderClass('Drupal\hcl_domain_webform\HCLWebformEntityListBuilder');
+    $entity_types['webform']->setListBuilderClass('Drupal\domain_access_webform\DomainWebformEntityListBuilder');
   }
 
   if ($entity_types['webform_submission']->getListBuilderClass() == 'Drupal\webform\WebformSubmissionListBuilder') {
-    $entity_types['webform_submission']->setListBuilderClass('Drupal\hcl_domain_webform\DomainWebformSubmissionListBuilder');
+    $entity_types['webform_submission']->setListBuilderClass('Drupal\domain_access_webform\DomainWebformSubmissionListBuilder');
   }
 
   if ($entity_types['webform_submission']->getStorageClass() == 'Drupal\webform\WebformSubmissionStorage') {
-    $entity_types['webform_submission']->setStorageClass('Drupal\hcl_domain_webform\DomainWebformSubmissionStorage');
+    $entity_types['webform_submission']->setStorageClass('Drupal\domain_access_webform\DomainWebformSubmissionStorage');
   }
 }
 
 /**
  * Custom submit handler.
  */
-function hcl_domain_webform_form_submit(&$form, FormStateInterface $form_state) {
+function domain_access_webform_form_submit(&$form, FormStateInterface $form_state) {
   $domains = $form_state->getValue('domain_id');
   $domain_ids = [];
   foreach ($domains as $key => $domain) {
@@ -61,7 +61,7 @@ function hcl_domain_webform_form_submit(&$form, FormStateInterface $form_state) 
 /**
  * Implements hook_webform_submission_create().
  */
-function hcl_domain_webform_webform_submission_create(WebformSubmissionInterface $entity) {
+function domain_access_webform_webform_submission_create(WebformSubmissionInterface $entity) {
   $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
 
   if (!empty($domain)) {
@@ -72,21 +72,21 @@ function hcl_domain_webform_webform_submission_create(WebformSubmissionInterface
 /**
  * Implements hook_form_alter().
  */
-function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function domain_access_webform_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $webform_form_ids = ['webform_submission_filter_form', 'webform_filter_form'];
   if (in_array($form_id, $webform_form_ids)) {
-    $filter_access = !hcl_domain_webform_is_local_admin() ? TRUE : FALSE;
+    $filter_access = !domain_access_webform_is_local_admin() ? TRUE : FALSE;
     $selected = \Drupal::request()->query->get('domain');
 
     $current_user = \Drupal::currentUser();
 
     if ($current_user->hasPermission('grant all webform access')) {
-      $options = \Drupal::service('hcl_domain_webform.domain_webform')
+      $options = \Drupal::service('domain_access_webform.domain_webform')
         ->generateDomainOptions(Domain::loadMultiple());
     }
     else {
-      $domain_service = \Drupal::service('hcl_domain_webform.domain_webform');
-      $allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+      $domain_service = \Drupal::service('domain_access_webform.domain_webform');
+      $allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
         ->getUserAllowedDomains($current_user);
       $domain_entities = \Drupal::entityTypeManager()->getStorage('domain')
         ->loadMultiple($allowed_domains);
@@ -106,7 +106,7 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
       '#access' => $filter_access,
     ];
 
-    $form['#submit'][] = 'hcl_domain_webform_form_webform_submission_filter_form_submit';
+    $form['#submit'][] = 'domain_access_webform_form_webform_submission_filter_form_submit';
   }
 
   if ($form_id == 'webform_settings_form_form') {
@@ -128,14 +128,14 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
       '#options' => $options,
       '#default_value' => $selected_list ?? [],
     ];
-    $form['actions']['submit']['#submit'][] = 'hcl_domain_webform_form_submit';
+    $form['actions']['submit']['#submit'][] = 'domain_access_webform_form_submit';
   }
 }
 
 /**
  * Submit handler for our custom field.
  */
-function hcl_domain_webform_form_webform_submission_filter_form_submit($form, FormStateInterface $form_state) {
+function domain_access_webform_form_webform_submission_filter_form_submit($form, FormStateInterface $form_state) {
   if ($domain = $form_state->getValue('domain')) {
     $form_state->getRedirect()->mergeOptions([
       'query' => [
@@ -148,12 +148,12 @@ function hcl_domain_webform_form_webform_submission_filter_form_submit($form, Fo
 /**
  * Implements hook_query_TAG_alter().
  */
-function hcl_domain_webform_query_domain_webform_filter_alter(AlterableInterface $query) {
+function domain_access_webform_query_domain_webform_filter_alter(AlterableInterface $query) {
   $current_user = \Drupal::currentUser();
   $domain = trim(\Drupal::request()->query->get('domain') ?? '');
 
   if (!$current_user->hasPermission('grant all webform access')) {
-    $allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+    $allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
       ->getUserAllowedDomains($current_user);
 
     /** @var \Drupal\Core\Entity\Query */
@@ -184,7 +184,7 @@ function hcl_domain_webform_query_domain_webform_filter_alter(AlterableInterface
  *
  * Alternative is a node_grants alternative / solution?
  */
-function hcl_domain_webform_entity_base_field_info(EntityTypeInterface $entity_type) {
+function domain_access_webform_entity_base_field_info(EntityTypeInterface $entity_type) {
   if ($entity_type->id() == 'webform_submission') {
     $fields = [];
     $fields['domain_id'] = BaseFieldDefinition::create('entity_reference')
@@ -201,7 +201,7 @@ function hcl_domain_webform_entity_base_field_info(EntityTypeInterface $entity_t
 /**
  * Checks if the current user is local admin or not.
  */
-function hcl_domain_webform_is_local_admin() {
+function domain_access_webform_is_local_admin() {
   $current_user = \Drupal::currentUser()->getAccount();
   $current_user_roles = $current_user->getRoles();
   $local_admin_roles = [
@@ -218,7 +218,7 @@ function hcl_domain_webform_is_local_admin() {
  *
  * Maps domain id on new werform create/duplicate.
  */
-function hcl_domain_webform_webform_presave(WebformInterface $entity) {
+function domain_access_webform_webform_presave(WebformInterface $entity) {
   if ($entity->isNew() &&
   empty($entity->get('domain_ids'))) {
     $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
@@ -231,7 +231,7 @@ function hcl_domain_webform_webform_presave(WebformInterface $entity) {
 /**
  * Implements hook_views_data_alter().
  */
-function hcl_domain_webform_views_data_alter(array &$data) {
+function domain_access_webform_views_data_alter(array &$data) {
   $data['webform_submission']['domain_webform'] = [
     'title' => t('Filter Webform Submission by domain'),
     'filter' => [
@@ -246,14 +246,14 @@ function hcl_domain_webform_views_data_alter(array &$data) {
 /**
  * Implements hook_webform_access().
  */
-function hcl_domain_webform_webform_access(EntityInterface $entity, $operation, AccountInterface $account) {
+function domain_access_webform_webform_access(EntityInterface $entity, $operation, AccountInterface $account) {
   $current_domain = \Drupal::getContainer()
     ->get('domain.negotiator')
     ->getActiveDomain();
   if ($operation == "submission_page" && $current_domain instanceof DomainInterface) {
     $allowed_domains = $entity->get('domain_ids') ?? '';
     $allowed_domains = explode(';', $allowed_domains);
-    $user_allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+    $user_allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
       ->getUserAllowedDomains($account);
 
     if (!$account->hasPermission('grant all webform access')) {

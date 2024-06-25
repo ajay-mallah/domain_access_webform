@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform;
+namespace Drupal\domain_access_webform;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @see \Drupal\webform\Entity\Webform
  */
-class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
+class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
 
   /**
    * Domain Negotiator.
@@ -27,7 +27,7 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
   /**
    * Helper Class instance for domain webforms.
    *
-   * @var \Drupal\hcl_domain_webform\DomainWebformService
+   * @var \Drupal\domain_access_webform\DomainWebformService
    */
   protected $domainHelper;
 
@@ -37,7 +37,7 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
     $instance = parent::createInstance($container, $entity_type);
     $instance->domainNegotiator = $container->get('domain.negotiator');
-    $instance->domainHelper = $container->get('hcl_domain_webform.domain_webform');
+    $instance->domainHelper = $container->get('domain_access_webform.domain_webform');
     return $instance;
   }
 
