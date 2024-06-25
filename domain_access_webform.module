@@ -75,7 +75,6 @@ function domain_access_webform_webform_submission_create(WebformSubmissionInterf
 function domain_access_webform_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $webform_form_ids = ['webform_submission_filter_form', 'webform_filter_form'];
   if (in_array($form_id, $webform_form_ids)) {
-    $filter_access = !domain_access_webform_is_local_admin() ? TRUE : FALSE;
     $selected = \Drupal::request()->query->get('domain');
 
     $current_user = \Drupal::currentUser();
@@ -86,8 +85,7 @@ function domain_access_webform_form_alter(&$form, FormStateInterface $form_state
     }
     else {
       $domain_service = \Drupal::service('domain_access_webform.domain_webform');
-      $allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
-        ->getUserAllowedDomains($current_user);
+      $allowed_domains = $domain_service->getUserAllowedDomains($current_user);
       $domain_entities = \Drupal::entityTypeManager()->getStorage('domain')
         ->loadMultiple($allowed_domains);
       $options = $domain_service
@@ -103,7 +101,6 @@ function domain_access_webform_form_alter(&$form, FormStateInterface $form_state
       '#options' => $options,
       '#default_value' => ($selected && in_array($selected, array_keys($options))) ? $selected : NULL,
       '#weight' => -3,
-      '#access' => $filter_access,
     ];
 
     $form['#submit'][] = 'domain_access_webform_form_webform_submission_filter_form_submit';
@@ -196,21 +193,6 @@ function domain_access_webform_entity_base_field_info(EntityTypeInterface $entit
 
     return $fields;
   }
-}
-
-/**
- * Checks if the current user is local admin or not.
- */
-function domain_access_webform_is_local_admin() {
-  $current_user = \Drupal::currentUser()->getAccount();
-  $current_user_roles = $current_user->getRoles();
-  $local_admin_roles = [
-    'hr_team',
-    'sdmt_office_of_cmo',
-    'employer_brand_team',
-    'local_admin',
-  ];
-  return array_intersect($current_user_roles, $local_admin_roles) ? TRUE : FALSE;
 }
 
 /**
