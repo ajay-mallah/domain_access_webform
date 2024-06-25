@@ -4,12 +4,16 @@ namespace Drupal\hcl_domain_webform;
 
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Logger\LoggerChannelFactory;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * DomainWebformService class to provides services.
  */
 class DomainWebformService {
+
+  use StringTranslationTrait;
 
   /**
    * Manages entity type plugin definitions.
@@ -85,6 +89,45 @@ class DomainWebformService {
     catch (\Exception $e) {
       $this->logger->get('domain_access_webform')->error($e->getMessage());
     }
+  }
+
+  /**
+   * Provides the alowed domain of the user.
+   * 
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The user account object.
+   * 
+   * @return array
+   *   Returns the array of user allowed domains.
+   */
+  public function getUserAllowedDomains(AccountInterface $account) {
+    $user = $this->entityTypeManager->getStorage('user')->load($account->id());
+    $domain_access = $user->get('field_domain_access')->getValue();
+    $domain_access = array_column($domain_access, 'target_id');
+    $domain_admin = $user->get('field_domain_admin')->getValue();
+    $domain_admin = array_column($domain_admin, 'target_id');
+
+    $allowed_domains = array_unique(array_merge($domain_access, $domain_admin));
+
+    return $allowed_domains;
+  }
+
+  /**
+   * Generates the domain dropdown options.
+   * 
+   * @param array $domain_ids
+   *   Takes the array of domain objects.
+   * 
+   * @return array
+   *   Returns the array of generated options.
+   */
+  public function generateDomainOptions(array $domains) {
+    $options = ['' => $this->t('All domains')];
+    foreach ($domains as $domain) {
+      $options[$domain->id()] = $domain->label();
+    }
+
+    return $options;
   }
 
 }
