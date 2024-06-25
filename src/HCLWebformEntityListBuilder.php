@@ -25,11 +25,19 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
   protected $domainNegotiator;
 
   /**
+   * Helper Class instance for domain webforms.
+   * 
+   * @var \Drupal\hcl_domain_webform\DomainWebformService
+   */
+  protected $domainHelper;
+
+  /**
    * {@inheritdoc}
    */
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
     $instance = parent::createInstance($container, $entity_type);
     $instance->domainNegotiator = $container->get('domain.negotiator');
+    $instance->domainHelper = $container->get('hcl_domain_webform.domain_webform');
     return $instance;
   }
 
@@ -110,16 +118,34 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
   protected function getQuery($keys = '', $category = '', $state = ''): QueryInterface
   {
     $query = parent::getQuery($keys, $category, $state);
+    $or_group = $query->orConditionGroup();
     $domain = $this->request->query->get('domain');
-    
     $domain = trim($domain ?? '');
-    if ($domain) {
-      if ($is_valid_domain = Domain::load($domain)) {
-        $or_group = $query->orConditionGroup();
 
+    if (!$this->currentUser->hasPermission('grant all webform access')) {
+      $allowed_domains = $this->domainHelper->getUserAllowedDomains($this->currentUser);
+      if ($domain) {
+        if (in_array($domain, $allowed_domains)) {
+          $query->condition('domain_ids', ";$domain;", 'CONTAINS');
+        }
+        else {
+          $query->condition('id', '');
+        }
+      }
+      foreach ($allowed_domains as $domain) {
         $or_group->condition('domain_ids', ";$domain;", 'CONTAINS');
-    
-        $query->condition($or_group);
+      }
+      $query->condition($or_group);
+    }
+    else {
+      if ($domain) {
+        if ($is_valid_domain = Domain::load($domain)) {
+          $or_group->condition('domain_ids', ";$domain;", 'CONTAINS');
+          $query->condition($or_group);
+        }
+        else {
+          $query->condition('id', '');
+        }
       }
     }
 

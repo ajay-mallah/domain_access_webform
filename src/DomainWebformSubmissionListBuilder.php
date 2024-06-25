@@ -48,12 +48,11 @@ class DomainWebformSubmissionListBuilder extends WebformSubmissionListBuilder {
    * {@inheritdoc}
    */
   protected function getQuery($keys = '', $state = '', $source_entity = '') :QueryInterface {
-    $query = $this->getStorage()->getQuery();
     $query = parent::getQuery($keys, $state, $source_entity);
 
     // Add a custom tag so we can limit the results.
     $query->addTag('domain_webform_filter');
-
+    
     return $query;
   }
 

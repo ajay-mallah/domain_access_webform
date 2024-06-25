@@ -79,10 +79,23 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
     $filter_access = !hcl_domain_webform_is_local_admin() ? TRUE : FALSE;
     $selected = \Drupal::request()->query->get('domain');
 
-    $options = ['' => t('All domains')];
-    foreach (Domain::loadMultiple() as $domain) {
-      $options[$domain->id()] = $domain->label();
+    $current_user = \Drupal::currentUser();
+
+    if ($current_user->hasPermission('grant all webform access')) {
+      $options = \Drupal::service('hcl_domain_webform.domain_webform')
+        ->generateDomainOptions(Domain::loadMultiple());
     }
+    else {
+      $domain_service = \Drupal::service('hcl_domain_webform.domain_webform');
+      $allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+        ->getUserAllowedDomains($current_user);
+      $domain_entities = \Drupal::entityTypeManager()->getStorage('domain')
+        ->loadMultiple($allowed_domains);
+      $options = $domain_service
+        ->generateDomainOptions($domain_entities);
+    }
+
+
     $form['filter']['search']['#weight'] = -5;
     $form['filter']['state']['#weight'] = -4;
     $form['filter']['domain'] = [
@@ -125,23 +138,41 @@ function hcl_domain_webform_form_alter(&$form, FormStateInterface $form_state, $
  * Submit handler for our custom field.
  */
 function hcl_domain_webform_form_webform_submission_filter_form_submit($form, FormStateInterface $form_state) {
-  $form_state->getRedirect()->mergeOptions([
-    'query' => [
-      'domain' => $form_state->getValue('domain'),
-    ],
-  ]);
+  if ($domain = $form_state->getValue('domain')) {
+    $form_state->getRedirect()->mergeOptions([
+      'query' => [
+        'domain' => $domain,
+      ],
+    ]);
+  }
 }
 
 /**
  * Implements hook_query_TAG_alter().
  */
 function hcl_domain_webform_query_domain_webform_filter_alter(AlterableInterface $query) {
-  $is_local_admin = hcl_domain_webform_is_local_admin();
-  if ($is_local_admin) {
-    $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
-    $query->condition('webform_submission.domain_id', $domain->id());
+  $current_user = \Drupal::currentUser();
+  $domain = trim(\Drupal::request()->query->get('domain') ?? '');
+
+  if (!$current_user->hasPermission('grant all webform access')) {
+    $allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+    ->getUserAllowedDomains($current_user);
+
+    /** @var \Drupal\Core\Entity\Query */
+    $query = $query;
+    if ($domain) {
+      if (in_array($domain, $allowed_domains)) {
+        $query->condition('webform_submission.domain_id', $domain);
+      }
+      else {
+        $query->condition('webform_submission.sid', NULL);
+      }
+    }
+    else {
+      $query->condition('webform_submission.domain_id', $allowed_domains, 'IN');
+    }
   }
-  elseif ($domain = \Drupal::request()->query->get('domain')) {
+  elseif ($domain) {
     $query->condition('webform_submission.domain_id', $domain);
   }
 }
@@ -224,6 +255,11 @@ function hcl_domain_webform_webform_access(EntityInterface $entity, $operation, 
   if ($operation == "submission_page" && $current_domain instanceof DomainInterface) {
     $allowed_domains = $entity->get('domain_ids') ?? '';
     $allowed_domains = explode(';', $allowed_domains);
-    return AccessResult::forbiddenIf(!in_array($current_domain->id(), $allowed_domains));
+    $user_allowed_domains = \Drupal::service('hcl_domain_webform.domain_webform')
+      ->getUserAllowedDomains($account);
+
+    if (!$account->hasPermission('grant all webform access')) {
+      return AccessResult::forbiddenIf(!array_intersect($allowed_domains, $user_allowed_domains));
+    }
   }
 }
