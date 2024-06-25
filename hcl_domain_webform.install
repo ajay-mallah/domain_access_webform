@@ -1,12 +1,17 @@
 <?php
 
 /**
+ * @file
+ * Contains the necessary install and update hooks.
+ */
+
+/**
  * Implements hook_uninstall().
  */
 function hcl_domain_webform_uninstall() {
   $entity_manager = \Drupal::entityTypeManager();
-  $entity_type = 'webform_submission'; 
-  $field_name = 'domain_id'; 
+  $entity_type = 'webform_submission';
+  $field_name = 'domain_id';
   // Load the field storage definition.
   $field_storage = $entity_manager->getStorage('field_storage_config')->load($entity_type . '.' . $field_name);
   if ($field_storage) {
@@ -22,5 +27,5 @@ function hcl_domain_webform_uninstall() {
       $webform_config->clear('third_party_settings.hcl_domain_webform')->save();
     }
   }
-  
+
 }

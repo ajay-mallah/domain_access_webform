@@ -26,7 +26,7 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
 
   /**
    * Helper Class instance for domain webforms.
-   * 
+   *
    * @var \Drupal\hcl_domain_webform\DomainWebformService
    */
   protected $domainHelper;
@@ -52,7 +52,6 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
         ->execute();
       // Fetching domain filtered entities.
       // $entity_ids = $this->fetchDomainFilteredIds($entity_ids);
-
       // Make sure all entity ids have totals.
       $this->totalNumberOfResults += array_fill_keys($entity_ids, 0);
 
@@ -88,7 +87,6 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
       $entity_ids = $query->execute();
 
       // $entity_ids = $this->fetchDomainFilteredIds($entity_ids);
-
       // Calculate totals.
       // @see \Drupal\webform\WebformEntityStorage::getTotalNumberOfResults
       if ($entity_ids) {
@@ -115,8 +113,7 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
   /**
    * {@inheritdoc}
    */
-  protected function getQuery($keys = '', $category = '', $state = ''): QueryInterface
-  {
+  protected function getQuery($keys = '', $category = '', $state = ''): QueryInterface {
     $query = parent::getQuery($keys, $category, $state);
     $or_group = $query->orConditionGroup();
     $domain = $this->request->query->get('domain');
@@ -139,7 +136,7 @@ class HCLWebformEntityListBuilder extends WebformEntityListBuilder {
     }
     else {
       if ($domain) {
-        if ($is_valid_domain = Domain::load($domain)) {
+        if (Domain::load($domain)) {
           $or_group->condition('domain_ids', ";$domain;", 'CONTAINS');
           $query->condition($or_group);
         }

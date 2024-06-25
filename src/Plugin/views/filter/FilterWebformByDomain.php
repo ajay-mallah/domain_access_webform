@@ -2,10 +2,14 @@
 
 namespace Drupal\hcl_domain_webform\Plugin\views\filter;
 
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\domain\Entity\Domain;
 use Drupal\views\Plugin\views\filter\StringFilter;
+use Psr\Container\ContainerInterface;
 
 /**
  * Filters Webform submission by domain.
@@ -21,11 +25,52 @@ class FilterWebformByDomain extends StringFilter {
   /**
    * The current User account object.
    *
-   * @var
+   * @var \Drupal\Core\Session\AccountInterface
    */
   protected $currentUser;
 
-  // public function create
+  /**
+   * EntityTypeManager Instance to handle the entities.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Constructs a new StringFilter object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Database\Connection $connection
+   *   The database connection.
+   * @param \Drupal\Core\Session\AccountInterface $current_user
+   *   Contains the current user account object.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   Contains the entity type manager instance to handlle entities.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Connection $connection, AccountInterface $current_user, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $connection);
+    $this->currentUser = $current_user;
+    $this->entityTypeManager = $entity_type_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('database'),
+      $container->get('current_user'),
+      $container->get('entity_type.manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -41,7 +86,7 @@ class FilterWebformByDomain extends StringFilter {
   /**
    * {@inheritdoc}
    */
-  function valueForm(&$form, FormStateInterface $form_state) {
+  public function valueForm(&$form, FormStateInterface $form_state) {
     parent::valueForm($form, $form_state);
     $options = $this->generateDomainList();
     $form['value'] = [
@@ -76,11 +121,11 @@ class FilterWebformByDomain extends StringFilter {
 
   /**
    * Function to generate the options of available domains.
-   * 
+   *
    * @return array
    *   Returns the array of available domains.
    */
-  private function generateDomainList()  {
+  private function generateDomainList() {
     $domains = Domain::loadMultiple();
     $options = [];
     $options['any'] = $this->t('- Any domain -');
@@ -93,15 +138,13 @@ class FilterWebformByDomain extends StringFilter {
 
   /**
    * Function to get the user allowed domains.
-   * 
+   *
    * @return array
    *   Returns the domain list as an array.
    */
   private function getAllowedDomains() {
-    $id = \Drupal::currentUser()->id();
-
     /** @var \Drupal\user\Entity\User */
-    $user = \Drupal::entityTypeManager()->getStorage('user')->load($id);
+    $user = $this->entityTypeManager->getStorage('user')->load($this->currentUser->id());
     $allowed_domains = $user->get('field_domain_access')->referencedEntities();
 
     $options['any'] = $this->t('- Any domain -');
@@ -117,7 +160,7 @@ class FilterWebformByDomain extends StringFilter {
    */
   public function query() {
     $value = $this->value;
-    
+
     if ($value == 'any') {
       $domains = $this->getAllowedDomains();
       array_shift($domains);
@@ -128,12 +171,12 @@ class FilterWebformByDomain extends StringFilter {
     else {
       $show_unmapped_webforms = $this->options['show_unmapped_webforms'];
       $condition = $this->query->getConnection()->condition('OR')
-        ->condition('webform_submission.domain_id', $value , '=');
-  
+        ->condition('webform_submission.domain_id', $value, '=');
+
       if ($show_unmapped_webforms) {
         $condition->isNull("webform_submission.domain_id");
       }
-  
+
       $this->query->addWhere($this->options['group'], $condition);
     }
   }

@@ -52,7 +52,7 @@ class DomainWebformSubmissionListBuilder extends WebformSubmissionListBuilder {
 
     // Add a custom tag so we can limit the results.
     $query->addTag('domain_webform_filter');
-    
+
     return $query;
   }
 
