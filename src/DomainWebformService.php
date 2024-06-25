@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform;
+namespace Drupal\domain_access_webform;
 
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Logger\LoggerChannelFactory;

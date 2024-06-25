@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform\Form;
+namespace Drupal\domain_access_webform\Form;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
@@ -52,7 +52,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
-    $form['#attached']['library'][] = 'hcl_domain_webform/hcl_domain_webform.inline_radios';
+    $form['#attached']['library'][] = 'domain_access_webform/domain_access_webform.inline_radios';
 
     $form['detail'] = [
       '#markup' => $this->t("Maps webform's all the submissions with the selected domain"),
@@ -109,6 +109,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
     }
 
     if (!empty($mapped_webform)) {
+      $batch_data = [];
       foreach ($mapped_webform as $key => $domain_id) {
         $query = $this->entityTypeManager->getStorage('webform_submission')
           ->getQuery()
@@ -117,8 +118,12 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
         $sids = $query->execute();
         if (!empty($sids)) {
           $chunks = array_chunk($sids, 100);
-          $this->setBatchProcess($chunks, $domain_id);
+          $batch_data[$key]['chunks'] = $chunks;
+          $batch_data[$key]['domain_id'] = $domain_id;
         }
+      }
+      if (!empty($batch_data)) {
+        $this->setBatchProcess($batch_data);
       }
     }
   }
@@ -171,24 +176,24 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
   /**
    * Sets Batch process to map webform submissions.
    *
-   * @param array $chunks
-   *   Contains chunks of webform submissions.
-   * @param string $domain_id
-   *   Target domain id.
+   * @param array $batch_data
+   *   Contains submissions chunks and it's domain.
    */
-  protected function setBatchProcess(array $chunks, string $domain_id) {
+  protected function setBatchProcess(array $batch_data) {
     $operations = [];
-    foreach ($chunks as $chunk) {
-      $operations[] = [
-        '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
-        [$chunk, $domain_id],
-      ];
+    foreach ($batch_data as $data) {
+      foreach ($data['chunks'] as $chunk) {
+        $operations[] = [
+          '\Drupal\domain_access_webform\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
+          [$chunk, $data['domain_id']],
+        ];
+      }
     }
     $batch = [
       'title' => $this->t("Processsing webform submissions..."),
       'operations' => $operations,
       'progress_message' => $this->t('Processed @current out of @total.'),
-      'finished' => '\Drupal\hcl_domain_webform\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
+      'finished' => '\Drupal\domain_access_webform\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
     ];
 
     batch_set($batch);

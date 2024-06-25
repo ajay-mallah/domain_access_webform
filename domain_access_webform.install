@@ -8,7 +8,7 @@
 /**
  * Implements hook_uninstall().
  */
-function hcl_domain_webform_uninstall() {
+function domain_access_webform_uninstall() {
   $entity_manager = \Drupal::entityTypeManager();
   $entity_type = 'webform_submission';
   $field_name = 'domain_id';
@@ -24,7 +24,6 @@ function hcl_domain_webform_uninstall() {
     $webform_config = $config_factory->getEditable("webform.webform.{$name}");
     if ($webform_config->get('domain_ids') !== NULL) {
       $webform_config->clear('domain_ids');
-      $webform_config->clear('third_party_settings.hcl_domain_webform')->save();
     }
   }
 

@@ -1,4 +1,4 @@
-hcl_domain_webform.inline_radios:
+domain_access_webform.inline_radios:
   version: 1.x
   css:
     theme:

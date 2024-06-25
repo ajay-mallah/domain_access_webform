@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\hcl_domain_webform\Batch;
+namespace Drupal\domain_access_webform\Batch;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
@@ -22,7 +22,7 @@ class UpdateWebformDomain {
    *   The batch context.
    */
   public static function updateDomain(string $webform_id, string $domain_ids, array &$context) {
-    $domain_webform = \Drupal::service('hcl_domain_webform.domain_webform');
+    $domain_webform = \Drupal::service('domain_access_webform.domain_webform');
     $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
     if ($webform) {
       if ($domain_webform->mapDomain($webform_id, $domain_ids)) {
@@ -49,14 +49,14 @@ class UpdateWebformDomain {
     $messenger = \Drupal::messenger();
     if (!empty($results['success'])) {
       $messenger->addMessage($translator->translate(
-        '@count Webforms domain has been updated.', [
+        '@count Webforms has been updated.', [
           '@count' => count($results['success']),
         ]
       ));
     }
     elseif (!empty($results['failed'])) {
       $messenger->addError($translator->translate(
-        '@count Webforms domain has been failed.', [
+        '@count Webforms has been failed.', [
           '@count' => count($results['failed']),
         ]
       ));

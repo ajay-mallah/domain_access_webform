@@ -1,6 +1,6 @@
-name: hcl_domain_webform
+name: domain_access_webform
 type: module
-description: Domain Webform
+description: Domain Access Webform
 package: Custom
 core_version_requirement: ^9.5 || ^10
 dependencies:
