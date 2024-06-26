@@ -24,6 +24,7 @@ function domain_access_webform_uninstall() {
     $webform_config = $config_factory->getEditable("webform.webform.{$name}");
     if ($webform_config->get('domain_ids') !== NULL) {
       $webform_config->clear('domain_ids');
+      $webform_config->save();
     }
   }
 
