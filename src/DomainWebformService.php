@@ -31,16 +31,30 @@ class DomainWebformService {
   protected $logger;
 
   /**
+   * Defines an account interface which represents the current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
    * Sets class variables.
    *
    * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
    *   Manages entity type plugin definitions.
    * @param \Drupal\Core\Logger\LoggerChannelFactory $logger
    *   Describes a logger instance.
+   * @param \Drupal\Core\Session\AccountInterface $currentUser
+   *   Defines an account interface which represents the current user.
    */
-  public function __construct(EntityTypeManager $entityTypeManager, LoggerChannelFactory $logger) {
+  public function __construct(
+    EntityTypeManager $entityTypeManager,
+    LoggerChannelFactory $logger,
+    AccountInterface $currentUser,
+  ) {
     $this->entityTypeManager = $entityTypeManager;
     $this->logger = $logger;
+    $this->currentUser = $currentUser;
   }
 
   /**
@@ -95,14 +109,12 @@ class DomainWebformService {
   /**
    * Provides the alowed domain of the user.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   The user account object.
-   *
    * @return array
    *   Returns the array of user allowed domains.
    */
-  public function getUserAllowedDomains(AccountInterface $account) {
-    $user = $this->entityTypeManager->getStorage('user')->load($account->id());
+  public function getUserAllowedDomains() {
+    /** @var /Drupal\user\UserInterface */
+    $user = $this->entityTypeManager->getStorage('user')->load($this->currentUser->id());
     $domain_access = $user->get('field_domain_access')->getValue();
     $domain_access = array_column($domain_access, 'target_id');
     $domain_admin = $user->get('field_domain_admin')->getValue();
@@ -150,6 +162,25 @@ class DomainWebformService {
     }
 
     return FALSE;
+  }
+
+  /**
+   * Returns allowed domains options.
+   *
+   * @return array
+   *   Returns list of domain options.
+   */
+  public function getDomainOptions() {
+    if ($this->currentUser->hasPermission('grant all webform access')) {
+      $domains = $this->entityTypeManager->getStorage('domain')->loadMultiple();
+      return $this->generateDomainOptions($domains);
+    }
+    else {
+      $allowed_domains = $this->getUserAllowedDomains();
+      $domains = $this->entityTypeManager->getStorage('domain')->loadMultiple($allowed_domains);
+      return $this->generateDomainOptions($domains);
+    }
+
   }
 
 }

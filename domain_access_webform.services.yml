@@ -1,4 +1,4 @@
 services:
   domain_access_webform.domain_webform:
     class: Drupal\domain_access_webform\DomainWebformService
-    arguments: ['@entity_type.manager', '@logger.factory']
+    arguments: ['@entity_type.manager', '@logger.factory', '@current_user']
