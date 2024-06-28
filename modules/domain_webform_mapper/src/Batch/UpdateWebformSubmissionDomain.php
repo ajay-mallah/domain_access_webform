@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\domain_access_webform\Batch;
+namespace Drupal\domain_webform_mapper\Batch;
 
 /**
  * Batch process to submissions with the selected domain in bulk.
@@ -18,7 +18,7 @@ class UpdateWebformSubmissionDomain extends UpdateWebformDomain {
    *   The batch context.
    */
   public static function updateSubmissionDomain(array $chunks, string $domain_id, array &$context) {
-    $domain_webform = \Drupal::service('domain_access_webform.domain_webform');
+    $domain_webform = \Drupal::service('domain_webform_mapper.mapper');
     $domain_webform->mapSubmissionsDomain($chunks, $domain_id);
     $context['results']['success'] = isset($context['results']['success']) ?
     $context['results']['success'] + count($chunks) : count($chunks);

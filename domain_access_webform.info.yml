@@ -1,7 +1,7 @@
-name: domain_access_webform
+name: Domain Access Webform
 type: module
 description: Domain Access Webform
-package: Custom
+package: Domain Access Webform
 core_version_requirement: ^9.5 || ^10
 dependencies:
   - drupal:domain

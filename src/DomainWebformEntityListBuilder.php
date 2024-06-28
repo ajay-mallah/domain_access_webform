@@ -157,8 +157,8 @@ class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
     $header['domain'] = [
       'data' => $this->t('Domain'),
       'class' => [RESPONSIVE_PRIORITY_LOW],
-      'specifier' => 'domain',
-      'field' => 'domain',
+      'specifier' => 'domain_ids',
+      'field' => 'domain_ids',
     ];
     return $header;
   }

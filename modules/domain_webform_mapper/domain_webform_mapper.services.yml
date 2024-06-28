@@ -1,0 +1,4 @@
+services:
+  domain_webform_mapper.mapper:
+    class: Drupal\domain_webform_mapper\DomainWebformMapper
+    arguments: ['@entity_type.manager', '@logger.factory']

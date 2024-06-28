@@ -1,4 +1,4 @@
-domain_access_webform.inline_radios:
+domain_webform_mapper.inline_radios:
   version: 1.x
   css:
     theme:

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\domain_access_webform\Form;
+namespace Drupal\domain_webform_mapper\Form;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
@@ -52,7 +52,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
-    $form['#attached']['library'][] = 'domain_access_webform/domain_access_webform.inline_radios';
+    $form['#attached']['library'][] = 'domain_webform_mapper/domain_webform_mapper.inline_radios';
 
     $form['detail'] = [
       '#markup' => $this->t("Maps webform's all the submissions with the selected domain"),
@@ -184,7 +184,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
     foreach ($batch_data as $data) {
       foreach ($data['chunks'] as $chunk) {
         $operations[] = [
-          '\Drupal\domain_access_webform\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
+          '\Drupal\domain_webform_mapper\Batch\UpdateWebformSubmissionDomain::updateSubmissionDomain',
           [$chunk, $data['domain_id']],
         ];
       }
@@ -193,7 +193,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
       'title' => $this->t("Processsing webform submissions..."),
       'operations' => $operations,
       'progress_message' => $this->t('Processed @current out of @total.'),
-      'finished' => '\Drupal\domain_access_webform\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
+      'finished' => '\Drupal\domain_webform_mapper\Batch\UpdateWebformSubmissionDomain::batchFinishedCallback',
     ];
 
     batch_set($batch);

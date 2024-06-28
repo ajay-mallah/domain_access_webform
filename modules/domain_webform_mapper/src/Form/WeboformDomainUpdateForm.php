@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\domain_access_webform\Form;
+namespace Drupal\domain_webform_mapper\Form;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
@@ -74,7 +74,7 @@ class WeboformDomainUpdateForm extends FormBase {
     $form['upload_excel_file'] = [
       '#type' => 'managed_file',
       '#element_validate' => ['::validateCsv'],
-      '#title' => $this->t('Upload user data in CSV'),
+      '#title' => $this->t('Upload webform data in CSV'),
       '#description' => "
         <p>First row of the csv file will be header [webform_id, domain_id]</p>
         <p>Only signle webform_id is allowed in a row</p>
@@ -124,7 +124,7 @@ class WeboformDomainUpdateForm extends FormBase {
     if ($this->csvData) {
       foreach ($this->csvData as $webform_id => $domain_ids) {
         $operations[] = [
-          '\Drupal\domain_access_webform\Batch\UpdateWebformDomain::updateDomain',
+          '\Drupal\domain_webform_mapper\Batch\UpdateWebformDomain::updateDomain',
           [$webform_id, $domain_ids],
         ];
       }
@@ -132,7 +132,7 @@ class WeboformDomainUpdateForm extends FormBase {
         'title' => $this->t("Processing webforms..."),
         'operations' => $operations,
         'progress_message' => $this->t('Processed @current out of @total.'),
-        'finished' => '\Drupal\domain_access_webform\Batch\UpdateWebformDomain::batchFinishedCallback',
+        'finished' => '\Drupal\domain_webform_mapper\Batch\UpdateWebformDomain::batchFinishedCallback',
       ];
       batch_set($batch);
     }
@@ -143,6 +143,9 @@ class WeboformDomainUpdateForm extends FormBase {
    *
    * @param \Drupal\file\FileInterface $file
    *   Defines getter and setter methods for file entity base fields.
+   *
+   * @return array
+   *   Returns processed webform id and it's respective domains.
    */
   protected function fetchFileData(FileInterface $file) {
     if ($file) {
@@ -160,7 +163,7 @@ class WeboformDomainUpdateForm extends FormBase {
         array_shift($rows);
         return $this->processData($rows);
       }
-      return NULL;
+      return $rows;
     }
   }
 
@@ -169,6 +172,9 @@ class WeboformDomainUpdateForm extends FormBase {
    *
    * @param array $row_data
    *   Row data of the csv file.
+   *
+   * @return array
+   *   Returns processed data.
    */
   protected function processData(array $row_data) {
     $data = [];
