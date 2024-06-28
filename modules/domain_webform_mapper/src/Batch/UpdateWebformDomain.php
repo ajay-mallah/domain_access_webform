@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\domain_access_webform\Batch;
+namespace Drupal\domain_webform_mapper\Batch;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
@@ -22,7 +22,7 @@ class UpdateWebformDomain {
    *   The batch context.
    */
   public static function updateDomain(string $webform_id, string $domain_ids, array &$context) {
-    $domain_webform = \Drupal::service('domain_access_webform.domain_webform');
+    $domain_webform = \Drupal::service('domain_webform_mapper.mapper');
     $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
     if ($webform) {
       if ($domain_webform->mapDomain($webform_id, $domain_ids)) {

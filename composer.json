@@ -17,8 +17,8 @@
       }
     ],
     "support": {
-      "issues": "https://www.drupal.org/project/issues/register_with_otp",
-      "source": "https://git.drupalcode.org/project/register_with_otp"
+      "issues": "https://www.drupal.org/project/issues/domain_access_webform",
+      "source": "https://git.drupalcode.org/project/domain_access_webform"
     },
     "require": {
         "drupal/domain": "^2.0@beta",

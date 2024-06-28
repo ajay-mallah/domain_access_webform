@@ -1,0 +1,17 @@
+domain_webform_mapper.domain_webform:
+  title: 'Domain Webform Mapper'
+  route_name: domain_webform_mapper.webform_domain_update
+  base_route: entity.webform.collection
+  weight: 150
+
+domain_webform_mapper.webform_domain_update:
+  title: 'Map Webforms'
+  route_name: domain_webform_mapper.webform_domain_update
+  parent_id: domain_webform_mapper.domain_webform
+  weight: 10
+
+domain_webform_mapper.webform_submission_domain_update:
+  title: 'Map Submissions'
+  route_name: domain_webform_mapper.webform_submission_domain_update
+  parent_id: domain_webform_mapper.domain_webform
+  weight: 20

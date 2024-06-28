@@ -1,0 +1,7 @@
+name: Domain Webform Mapper
+type: module
+description: Domain Webform Mapper (Maps webforms and domains in the bulk).
+package: Domain Access Webform
+core_version_requirement: ^9.5 || ^10
+dependencies:
+  - domain_access_webform:domain_access_webform

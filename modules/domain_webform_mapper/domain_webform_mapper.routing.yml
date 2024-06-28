@@ -1,0 +1,15 @@
+domain_webform_mapper.webform_domain_update:
+  path: '/admin/domain-webform-mapper/form'
+  defaults:
+    _form: '\Drupal\domain_webform_mapper\Form\WeboformDomainUpdateForm'
+    _title: 'Map webforms'
+  requirements:
+    _role: 'administrator'
+
+domain_webform_mapper.webform_submission_domain_update:
+  path: '/admin/domain-webform-submission-mapper/form'
+  defaults:
+    _form: '\Drupal\domain_webform_mapper\Form\WeboformSubmissionDomainUpdateForm'
+    _title: 'Map Submissions'
+  requirements:
+    _role: 'administrator'
