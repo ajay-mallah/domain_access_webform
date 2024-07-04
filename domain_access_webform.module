@@ -13,14 +13,20 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\domain\DomainInterface;
+use Drupal\domain_access_webform\DomainWebformEntityListBuilder;
+use Drupal\domain_access_webform\DomainWebformSubmissionListBuilder;
+use Drupal\domain_access_webform\DomainWebformSubmissionStorage;
+use Drupal\webform\WebformEntityListBuilder;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform\WebformSubmissionListBuilder;
+use Drupal\webform\WebformSubmissionStorage;
 
 /**
  * Implements hook_entity_type_alter().
  */
 function domain_access_webform_entity_type_alter(array &$entity_types) {
-  if ($entity_types['webform']->getListBuilderClass() == 'Drupal\webform\WebformEntityListBuilder') {
+  if ($entity_types['webform']->getListBuilderClass() == WebformEntityListBuilder::class) {
     $config_export = $entity_types['webform']->get('config_export');
 
     $extra_keys = [
@@ -28,15 +34,15 @@ function domain_access_webform_entity_type_alter(array &$entity_types) {
     ];
     // Merge the existing config export keys with the new ones.
     $entity_types['webform']->set('config_export', array_merge($config_export, $extra_keys));
-    $entity_types['webform']->setListBuilderClass('Drupal\domain_access_webform\DomainWebformEntityListBuilder');
+    $entity_types['webform']->setListBuilderClass(DomainWebformEntityListBuilder::class);
   }
 
-  if ($entity_types['webform_submission']->getListBuilderClass() == 'Drupal\webform\WebformSubmissionListBuilder') {
-    $entity_types['webform_submission']->setListBuilderClass('Drupal\domain_access_webform\DomainWebformSubmissionListBuilder');
+  if ($entity_types['webform_submission']->getListBuilderClass() == WebformSubmissionListBuilder::class) {
+    $entity_types['webform_submission']->setListBuilderClass(DomainWebformSubmissionListBuilder::class);
   }
 
-  if ($entity_types['webform_submission']->getStorageClass() == 'Drupal\webform\WebformSubmissionStorage') {
-    $entity_types['webform_submission']->setStorageClass('Drupal\domain_access_webform\DomainWebformSubmissionStorage');
+  if ($entity_types['webform_submission']->getStorageClass() == WebformSubmissionStorage::class) {
+    $entity_types['webform_submission']->setStorageClass(DomainWebformSubmissionStorage::class);
   }
 }
 
@@ -45,12 +51,7 @@ function domain_access_webform_entity_type_alter(array &$entity_types) {
  */
 function domain_access_webform_form_submit(&$form, FormStateInterface $form_state) {
   $domains = $form_state->getValue('domain_id');
-  $domain_ids = [];
-  foreach ($domains as $key => $domain) {
-    if ($domain) {
-      $domain_ids[] = $key;
-    }
-  }
+  $domain_ids = array_keys($domains);
   if ($entity = $form_state->getFormObject()->getEntity()) {
     $entity->set('domain_ids', ';' . implode(';', $domain_ids) . ';');
     $entity->save();
@@ -77,10 +78,9 @@ function domain_access_webform_form_alter(&$form, FormStateInterface $form_state
   $domain_service = \Drupal::service('domain_access_webform.domain_webform');
   if (in_array($form_id, $webform_form_ids)) {
     $selected_domain = \Drupal::request()->query->get('domain');
-    $has_query = $domain_service->checkQuery(
-      \Drupal::request(),
-      ['search', 'category', 'state', 'domain']
-    );
+    // Cheking if any filter is applied or not.
+    $request_queries = array_keys(array_filter(\Drupal::request()->query->all()));
+    $has_query = array_intersect(['search', 'category', 'state', 'domain'], $request_queries) ? TRUE : FALSE;
 
     $options = $domain_service->getDomainOptions();
     $form['filter']['search']['#weight'] = -5;
@@ -126,7 +126,7 @@ function domain_access_webform_form_alter(&$form, FormStateInterface $form_state
 }
 
 /**
- * Submit handler for our custom field.
+ * Submit handler for the domain filter field.
  */
 function domain_access_webform_form_webform_submission_filter_form_submit($form, FormStateInterface $form_state) {
   if ($domain = $form_state->getValue('domain')) {
@@ -145,12 +145,10 @@ function domain_access_webform_query_domain_webform_filter_alter(AlterableInterf
   $current_user = \Drupal::currentUser();
   $domain = trim(\Drupal::request()->query->get('domain') ?? '');
 
-  if (!$current_user->hasPermission('grant all webform access')) {
+  if (!$current_user->hasPermission('bypass domain access webform restrictions')) {
     $allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
       ->getUserAllowedDomains($current_user);
 
-    /** @var \Drupal\Core\Entity\Query */
-    $query = $query;
     if ($domain) {
       if (in_array($domain, $allowed_domains)) {
         $query->condition('webform_submission.domain_id', $domain);
@@ -197,8 +195,7 @@ function domain_access_webform_entity_base_field_info(EntityTypeInterface $entit
  * Maps domain id on new werform create/duplicate.
  */
 function domain_access_webform_webform_presave(WebformInterface $entity) {
-  if ($entity->isNew() &&
-  empty($entity->get('domain_ids'))) {
+  if ($entity->isNew() && empty($entity->get('domain_ids'))) {
     $domain = \Drupal::getContainer()->get('domain.negotiator')->getActiveDomain();
     if ($domain) {
       $entity->set('domain_ids', ';' . $domain->id() . ';');
@@ -228,13 +225,13 @@ function domain_access_webform_webform_access(EntityInterface $entity, $operatio
   $current_domain = \Drupal::getContainer()
     ->get('domain.negotiator')
     ->getActiveDomain();
-  if ($operation == "submission_page" && $current_domain instanceof DomainInterface) {
+  if ($operation == 'submission_page' && $current_domain instanceof DomainInterface) {
     $allowed_domains = $entity->get('domain_ids') ?? '';
     $allowed_domains = explode(';', $allowed_domains);
     $user_allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
       ->getUserAllowedDomains($account);
 
-    if (!$account->hasPermission('grant all webform access')) {
+    if (!$account->hasPermission('bypass domain access webform restrictions')) {
       return AccessResult::forbiddenIf(!array_intersect($allowed_domains, $user_allowed_domains));
     }
   }

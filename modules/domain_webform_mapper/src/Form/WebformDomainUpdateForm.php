@@ -12,10 +12,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The form builder class for updating mapping domains with the webforms.
  */
-class WeboformDomainUpdateForm extends FormBase {
+class WebformDomainUpdateForm extends FormBase {
 
   /**
-   * Proccessed CSV data.
+   * Processed CSV data.
    *
    * @var array
    */
@@ -75,11 +75,11 @@ class WeboformDomainUpdateForm extends FormBase {
       '#type' => 'managed_file',
       '#element_validate' => ['::validateCsv'],
       '#title' => $this->t('Upload webform data in CSV'),
-      '#description' => "
-        <p>First row of the csv file will be header [webform_id, domain_id]</p>
-        <p>Only signle webform_id is allowed in a row</p>
-        <p>Multiple domain_id is allowed followed seperated by | . E.g. site_1|site_2</p>
-      ",
+      '#description' => $this->t(
+        'First row of the csv file will be header [webform_id, domain_id].
+        Only signle webform_id is allowed in a row.
+        Multiple domain_id is allowed followed seperated by | . E.g. site_1|site_2'
+      ),
       '#upload_location' => 'public://bulk-import/excel_files/',
       '#upload_validators' => [
         'file_validate_extensions' => ['csv'],

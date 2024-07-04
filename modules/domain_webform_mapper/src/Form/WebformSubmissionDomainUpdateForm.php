@@ -10,10 +10,10 @@ use Psr\Container\ContainerInterface;
 /**
  * The form builder class for providing access to users.
  */
-class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
+class WebformSubmissionDomainUpdateForm extends WebformDomainUpdateForm {
 
   /**
-   * Stored weboform and their domains.
+   * Stores webform and their domains.
    *
    * @var array
    */
@@ -69,7 +69,7 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
       '#type' => 'table',
       '#header' => $header,
     ];
-
+    // Adding the table form to select webform and it's assigned domain.
     foreach ($this->webformList as $key => $webform) {
       $form['domain_matrix'][$key]['enabled'] = [
         '#type' => 'checkbox',
@@ -103,11 +103,12 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
     $domain_matrix = $form_state->getValue('domain_matrix');
     $mapped_webform = [];
     foreach ($domain_matrix as $key => $row) {
-      if ($row['enabled'] == 1) {
+      if ($row['enabled']) {
         $mapped_webform[$key] = $row['domain'];
       }
     }
 
+    // Adding webforms and their associated domains for the batch process.
     if (!empty($mapped_webform)) {
       $batch_data = [];
       foreach ($mapped_webform as $key => $domain_id) {
@@ -164,13 +165,13 @@ class WeboformSubmissionDomainUpdateForm extends WeboformDomainUpdateForm {
    */
   protected function getWebformDomains(string $domain_ids, array $domain_list) {
     $domains = explode(';', $domain_ids);
-    $associated_array = [];
+    $mapped_webforms = [];
     foreach ($domains as $domain) {
       if ($domain !== '') {
-        $associated_array[$domain] = $domain_list[$domain];
+        $mapped_webforms[$domain] = $domain_list[$domain];
       }
     }
-    return $associated_array;
+    return $mapped_webforms;
   }
 
   /**

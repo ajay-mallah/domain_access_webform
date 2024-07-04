@@ -17,7 +17,6 @@ function domain_access_webform_uninstall() {
   if ($field_storage) {
     $field_storage->delete();
   }
-  \Drupal::entityDefinitionUpdateManager()->getChangeSummary();
   $webforms = $entity_manager->getStorage('webform')->loadMultiple();
   $config_factory = \Drupal::configFactory();
   foreach ($webforms as $name => $webform) {

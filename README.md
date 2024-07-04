@@ -39,8 +39,8 @@ submissions with the selected domain.
 - Only one domain can be assigned to submissions.
 
 ### Configure webform access permission
-- User having permission `Grant all webform access` will be able to access all
-the webforms wether they are assigned to that domain or not. 
+- User having permission `bypass domain access webform restrictions` will be
+able to access all the webforms wether they are assigned to that domain or not. 
 
 
 ## Maintainers

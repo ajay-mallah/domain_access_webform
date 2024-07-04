@@ -50,8 +50,6 @@ class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
     if ($this->request->query->get('order') === (string) $header['results']['data']) {
       $entity_ids = $this->getQuery($this->keys, $this->category, $this->state)
         ->execute();
-      // Fetching domain filtered entities.
-      // $entity_ids = $this->fetchDomainFilteredIds($entity_ids);
       // Make sure all entity ids have totals.
       $this->totalNumberOfResults += array_fill_keys($entity_ids, 0);
 
@@ -82,11 +80,9 @@ class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
     else {
       $query = $this->getQuery($this->keys, $this->category, $this->state);
       $query->tableSort($header);
-      // $query->pager($this->getLimit());
       $query->pager(FALSE);
       $entity_ids = $query->execute();
 
-      // $entity_ids = $this->fetchDomainFilteredIds($entity_ids);
       // Calculate totals.
       // @see \Drupal\webform\WebformEntityStorage::getTotalNumberOfResults
       if ($entity_ids) {
@@ -119,7 +115,7 @@ class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
     $domain = $this->request->query->get('domain');
     $domain = trim($domain ?? '');
 
-    if (!$this->currentUser->hasPermission('grant all webform access')) {
+    if (!$this->currentUser->hasPermission('bypass domain access webform restrictions')) {
       $allowed_domains = $this->domainHelper->getUserAllowedDomains($this->currentUser);
       if ($domain) {
         if (in_array($domain, $allowed_domains)) {
@@ -183,20 +179,6 @@ class DomainWebformEntityListBuilder extends WebformEntityListBuilder {
     $row['domain']['data']['#markup'] = implode(', ', $domains ?? []);
     $row['domain']['#weight'] = -1;
     return $row;
-  }
-
-  /**
-   * Checks for current user role.
-   */
-  protected function isLocalAdmin() {
-    $current_user_roles = $this->currentUser->getRoles();
-    $local_admin_roles = [
-      'hr_team',
-      'sdmt_office_of_cmo',
-      'employer_brand_team',
-      'local_admin',
-    ];
-    return array_intersect($current_user_roles, $local_admin_roles) ? TRUE : FALSE;
   }
 
 }

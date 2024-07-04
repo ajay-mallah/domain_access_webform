@@ -51,6 +51,9 @@ class DomainWebformMapper {
    *   Webform id.
    * @param string $domain_ids
    *   Array containing the domain ids.
+   *
+   * @return \Drupal\webform\WebformInterface
+   *   Returns webform object if domain is mapped successfully.
    */
   public function mapDomain(string $webform_id, string $domain_ids) {
     $webform = $this->entityTypeManager->getStorage('webform')->load($webform_id);
@@ -76,6 +79,9 @@ class DomainWebformMapper {
    *   Contains chunks of webform submissions.
    * @param string $domain_id
    *   Target domain id.
+   *
+   * @return void
+   *   Returns nothing.
    */
   public function mapSubmissionsDomain(array $chunks, $domain_id) {
     try {

@@ -6,7 +6,6 @@ use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * DomainWebformService class to provides services.
@@ -57,7 +56,7 @@ class DomainWebformService {
   }
 
   /**
-   * Provides the alowed domain of the user.
+   * Provides the allowed domain of the user.
    *
    * @return array
    *   Returns the array of user allowed domains.
@@ -94,34 +93,13 @@ class DomainWebformService {
   }
 
   /**
-   * Function to check if there is any query in url.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   Takes the HTTP request object.
-   * @param array $keys
-   *   Takes the list of query keys to be checked.
-   *
-   * @return bool
-   *   Returns bool based on the presence of provided query parameters.
-   */
-  public function checkQuery(Request $request, array $keys) {
-    foreach ($keys as $key) {
-      if ($request->query->get($key)) {
-        return TRUE;
-      }
-    }
-
-    return FALSE;
-  }
-
-  /**
    * Returns allowed domains options.
    *
    * @return array
    *   Returns list of domain options.
    */
   public function getDomainOptions() {
-    if ($this->currentUser->hasPermission('grant all webform access')) {
+    if ($this->currentUser->hasPermission('bypass domain access webform restrictions')) {
       $domains = $this->entityTypeManager->getStorage('domain')->loadMultiple();
       return $this->generateDomainOptions($domains);
     }
@@ -130,7 +108,6 @@ class DomainWebformService {
       $domains = $this->entityTypeManager->getStorage('domain')->loadMultiple($allowed_domains);
       return $this->generateDomainOptions($domains);
     }
-
   }
 
 }
