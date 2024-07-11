@@ -13,7 +13,7 @@ use Psr\Container\ContainerInterface;
 class WebformSubmissionDomainUpdateForm extends WebformDomainUpdateForm {
 
   /**
-   * Stores webform and their domains.
+   * Stores webform and associated domains.
    *
    * @var array
    */

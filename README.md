@@ -40,7 +40,7 @@ submissions with the selected domain.
 
 ### Configure webform access permission
 - User having permission `bypass domain access webform restrictions` will be
-able to access all the webforms wether they are assigned to that domain or not. 
+able to access all the webforms whether they assigned to that domain or not. 
 
 
 ## Maintainers
