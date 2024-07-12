@@ -62,12 +62,21 @@ class DomainWebformService {
    *   Returns the array of user allowed domains.
    */
   public function getUserAllowedDomains() {
+    $domain_access = $domain_admin = [];
     /** @var /Drupal\user\UserInterface */
     $user = $this->entityTypeManager->getStorage('user')->load($this->currentUser->id());
-    $domain_access = $user->get('field_domain_access')->getValue();
-    $domain_access = array_column($domain_access, 'target_id');
-    $domain_admin = $user->get('field_domain_admin')->getValue();
-    $domain_admin = array_column($domain_admin, 'target_id');
+
+    if ($user->hasField('field_domain_access') &&
+      $domain_access = $user->get('field_domain_access')->getValue()
+    ) {
+      $domain_access = array_column($domain_access, 'target_id');
+    }
+
+    if ($user->hasField('field_domain_admin') &&
+      $domain_admin = $user->get('field_domain_admin')->getValue()
+    ) {
+      $domain_admin = array_column($domain_admin, 'target_id');
+    }
 
     $allowed_domains = array_unique(array_merge($domain_access, $domain_admin));
 

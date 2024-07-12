@@ -50,7 +50,7 @@ function domain_access_webform_entity_type_alter(array &$entity_types) {
  * Custom submit handler.
  */
 function domain_access_webform_form_submit(&$form, FormStateInterface $form_state) {
-  $domains = $form_state->getValue('domain_id');
+  $domains = array_filter($form_state->getValue('domain_id'));
   $domain_ids = array_keys($domains);
   if ($entity = $form_state->getFormObject()->getEntity()) {
     $entity->set('domain_ids', ';' . implode(';', $domain_ids) . ';');
@@ -226,13 +226,16 @@ function domain_access_webform_webform_access(EntityInterface $entity, $operatio
     ->get('domain.negotiator')
     ->getActiveDomain();
   if ($operation == 'submission_page' && $current_domain instanceof DomainInterface) {
-    $allowed_domains = $entity->get('domain_ids') ?? '';
-    $allowed_domains = explode(';', $allowed_domains);
-    $user_allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
-      ->getUserAllowedDomains($account);
-
-    if (!$account->hasPermission('bypass domain access webform restrictions')) {
+    if (!$account->hasPermission('bypass domain access webform restrictions') &&
+      $allowed_domains = $entity->get('domain_ids')
+    ) {
+      $allowed_domains = explode(';', $allowed_domains);
+      $user_allowed_domains = \Drupal::service('domain_access_webform.domain_webform')
+        ->getUserAllowedDomains($account);
       return AccessResult::forbiddenIf(!array_intersect($allowed_domains, $user_allowed_domains));
+    }
+    elseif (!$account->hasPermission('bypass domain access webform restrictions')) {
+      return AccessResult::forbidden();
     }
   }
 }
