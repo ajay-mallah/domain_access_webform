@@ -160,7 +160,7 @@ class FilterWebformByDomain extends StringFilter {
    */
   public function query() {
     $value = $this->value;
-
+    // Adds a query to show default allowed domain's submissions.
     if ($value == 'any') {
       $domains = $this->getAllowedDomains();
       array_shift($domains);
@@ -170,7 +170,8 @@ class FilterWebformByDomain extends StringFilter {
     }
     else {
       $show_unmapped_webforms = $this->options['show_unmapped_webforms'];
-      $condition = $this->query->getConnection()->condition('OR')
+      $condition = $this->query->getConnection()
+        ->condition('OR')
         ->condition('webform_submission.domain_id', $value, '=');
 
       if ($show_unmapped_webforms) {
